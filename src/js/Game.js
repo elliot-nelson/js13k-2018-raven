@@ -33,11 +33,8 @@ class Game {
 
         this.framems = 0;
 
-        this.x = 105;
-        this.y = 40;
-        this.dx = 0;
-        this.dy = 0;
-        this.facing = 0;
+        this.player = new Player();
+        this.player.input = this.input;
 
         this.crosshair = {
             x: 0,
@@ -53,45 +50,7 @@ class Game {
     }
 
     update(delta) {
-        let speed = 40;
-
-        if (this.input.up) {
-            this.dy -= 4;
-            if (this.dy < 0-speed) {
-                this.dy = 0-speed;
-            }
-        } else if (this.input.down) {
-            this.dy += 4;
-            if (this.dy > speed) {
-                this.dy = speed;
-            }
-        } else {
-            this.dy = this.dy * 0.8;
-            if (this.dy > -1 && this.dy < 1) {
-                this.dy = 0;
-            }
-        }
-
-        if (this.input.left) {
-            this.dx -= 4;
-            if (this.dx < 0-speed) {
-                this.dx = 0-speed;
-            }
-        } else if (this.input.right) {
-            this.dx += 4;
-            if (this.dx > speed) {
-                this.dx = speed;
-            }
-            console.log([this.dx, speed]);
-        } else {
-            this.dx = this.dx * 0.8;
-            if (this.dx > -1 && this.dx < 1) {
-                this.dx = 0;
-            }
-        }
-
-        this.x += this.dx * delta;
-        this.y += this.dy * delta;
+        this.player.update(delta);
 
         var cxd = 4;
         if (this.crosshair.x < cxd) {
@@ -105,19 +64,19 @@ class Game {
             this.crosshair.y = this.canvas.height - cxd;
         }
 
-        this.facing = r2d(Math.atan2(this.crosshair.y - this.y, this.crosshair.x - this.x));
+        this.facing = r2d(Math.atan2(this.crosshair.y - this.player.y, this.crosshair.x - this.player.x));
         console.log([this.crosshair.x,this.crosshair.y,this.facing]);
     }
 
     render() {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.drawImage(this.images.player, this.x, this.y);
+        this.ctx.drawImage(this.images.player, this.player.x, this.player.y);
 
-        var kx = this.x + Math.cos(d2r(this.facing)) * 30;
-        var ky = this.y + Math.sin(d2r(this.facing)) * 30;
+        var kx = this.player.x + Math.cos(d2r(this.facing)) * 30;
+        var ky = this.player.y + Math.sin(d2r(this.facing)) * 30;
 
         line(this.ctx, 'red', { x: this.crosshair.x, y: this.crosshair.y }, { x: this.crosshair.x + 2, y: this.crosshair.y +2 });
-        line(this.ctx, 'yellow', { x: this.x, y: this.y }, { x: kx, y: ky });
+        line(this.ctx, 'yellow', { x: this.player.x, y: this.player.y }, { x: kx, y: ky });
     }
 
     frame(nextms) {
