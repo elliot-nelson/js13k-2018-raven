@@ -1,0 +1,8 @@
+Game notes:
+
+mouse movement:
+originally tried "box", stuck in corners
+then tried "circle", but it just didn't behave predictably enough.
+tried "moving on angle" and "arc"... just can't do it!
+also, without a specific POV, moving can't rotate around the focus point.
+decided to go with a crosshair instead.

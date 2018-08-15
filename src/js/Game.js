@@ -1,3 +1,14 @@
+
+function line(ctx, color, p1, p2) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+}
 class Game {
     init() {
         // Prep canvas
@@ -15,13 +26,28 @@ class Game {
             console.log("loaded it");
         };
 
-        this.input = new Input().init();
+        this.input = new Input({
+            mouselock: this.toggleMouseLock.bind(this),
+            mousemove: this.onMouseMove.bind(this)
+        }).init();
+
         this.framems = 0;
 
         this.x = 105;
         this.y = 40;
         this.dx = 0;
         this.dy = 0;
+        this.facing = 0;
+
+        this.crosshair = {
+            x: 0,
+            y: 0
+        };
+
+        this.mouselocked = false;
+        document.addEventListener('pointerlockchange', this.onMouseLock.bind(this));
+        document.addEventListener('mozpointerlockchange', this.onMouseLock.bind(this));
+        document.addEventListener('webkitpointerlockchange', this.onMouseLock.bind(this));
 
         return this;
     }
@@ -66,11 +92,32 @@ class Game {
 
         this.x += this.dx * delta;
         this.y += this.dy * delta;
+
+        var cxd = 4;
+        if (this.crosshair.x < cxd) {
+            this.crosshair.x = cxd;
+        } else if (this.crosshair.x > this.canvas.width - cxd) {
+            this.crosshair.x = this.canvas.width - cxd;
+        }
+        if (this.crosshair.y < cxd) {
+            this.crosshair.y = cxd;
+        } else if (this.crosshair.y > this.canvas.height - cxd) {
+            this.crosshair.y = this.canvas.height - cxd;
+        }
+
+        this.facing = r2d(Math.atan2(this.crosshair.y - this.y, this.crosshair.x - this.x));
+        console.log([this.crosshair.x,this.crosshair.y,this.facing]);
     }
 
     render() {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.drawImage(this.images.player, this.x, this.y);
+
+        var kx = this.x + Math.cos(d2r(this.facing)) * 30;
+        var ky = this.y + Math.sin(d2r(this.facing)) * 30;
+
+        line(this.ctx, 'red', { x: this.crosshair.x, y: this.crosshair.y }, { x: this.crosshair.x + 2, y: this.crosshair.y +2 });
+        line(this.ctx, 'yellow', { x: this.x, y: this.y }, { x: kx, y: ky });
     }
 
     frame(nextms) {
@@ -98,5 +145,27 @@ class Game {
         const img = new Image(8, 5);
         img.src = src;
         return img;
+    }
+
+    toggleMouseLock() {
+        if (this.mouselocked) {
+            document.exitPointerLock();
+        } else {
+            this.canvas.requestPointerLock();
+        }
+    }
+
+    onMouseLock() {
+        if (document.pointerLockElement === this.canvas) {
+            this.mouselocked = true;
+        } else {
+            this.mouselocked = false;
+        }
+        console.log(["mouselocked", this.mouselocked]);
+    }
+
+    onMouseMove(deltaX, deltaY) {
+        this.crosshair.x += deltaX;
+        this.crosshair.y += deltaY;
     }
 };
