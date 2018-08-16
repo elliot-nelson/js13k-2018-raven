@@ -18,23 +18,23 @@ class Enemy {
             this.vx += Math.cos(angle) * this.ax;
             this.vy += Math.sin(angle) * this.ay;
 
-            if (this.vx > maxSpeed) {
-                this.vx = maxSpeed;
-            } else if (this.vx < -maxSpeed) {
-                this.vx = -maxSpeed;
+            if (this.vx > this.maxSpeed) {
+                this.vx = this.maxSpeed;
+            } else if (this.vx < -this.maxSpeed) {
+                this.vx = -this.maxSpeed;
             }
-            if (this.vy > maxSpeed) {
-                this.vy = maxSpeed;
-            } else if (this.vy < -maxSpeed) {
-                this.vy = -maxSpeed;
+            if (this.vy > this.maxSpeed) {
+                this.vy = this.maxSpeed;
+            } else if (this.vy < -this.maxSpeed) {
+                this.vy = -this.maxSpeed;
             }
 
             this.x += this.vx;
             this.y += this.vy;
 
-            var distance = distance(game.player, this);
-            if (distance < 10) {
-                state = 'idle';
+            var d = distance(game.player, this);
+            if (d < 10) {
+                this.state = 'idle';
             }
         } else if (this.state === 'idle') {
             this.vx = this.vx * 0.8;
@@ -42,11 +42,11 @@ class Enemy {
             if (this.vx > -1 && this.vx < 1) { this.vx = 0; }
             if (this.vy > -1 && this.vy < 1) { this.vy = 0; }
 
-            var distance = distance(game.player, this);
+            var d = distance(game.player, this);
 
-            if (distance < 120) {
+            if (d < 120) {
                 this.state = 'attack';
-                this.maxSpeed = Math.min(10, distance / this.travelSeconds);
+                this.maxSpeed = Math.min(10, d / this.travelSeconds);
             }
         } else {
             // The enemy is dead?

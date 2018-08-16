@@ -5,6 +5,9 @@ const size = require("gulp-size");
 const sourcemaps = require("gulp-sourcemaps");
 const concat = require("gulp-concat");
 const del = require("del");
+const add = require("gulp-add");
+
+const levelPacker = require("./level-packer");
 
 gulp.task('clean', () => {
     return del('dist');
@@ -21,12 +24,13 @@ gulp.task('build:css', () => {
 });
 
 gulp.task('build:assets', () => {
-    gulp.src('src/assets/*')
+    gulp.src('src/assets/*.png')
         .pipe(gulp.dest('dist/assets'));
 });
 
 gulp.task('build:js', () => {
     gulp.src('src/js/*.js')
+        .pipe(add("LevelCache.js", levelPacker.packAll("src/levels/level*.json"), true))
         .pipe(sourcemaps.init())
         .pipe(babel())
         .pipe(concat('app.js'))
@@ -38,7 +42,7 @@ gulp.task('build:js', () => {
 gulp.task('build', ['build:html', 'build:css', 'build:assets', 'build:js']);
 
 gulp.task('zip', () => {
-    gulp.src(['dist/**', '!dist/offline.zip'], { base: '.' })
+    gulp.src(['dist/**', '!dist/offline.zip', '!dist/app.js.map'], { base: '.' })
         .pipe(zip('offline.zip'))
         .pipe(size())
         .pipe(gulp.dest('dist'));

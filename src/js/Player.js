@@ -57,6 +57,6 @@ class Player {
         this.x += this.vx * delta;
         this.y += this.vy * delta;
 
-        console.log([this.x,this.y,this.vx,this.vy,this.ax,this.ay]);
+//        console.log([this.x,this.y,this.vx,this.vy,this.ax,this.ay]);
     }
 }

@@ -17,6 +17,17 @@ function d2r(d) {
     return d * Math.PI * 2 / 360;
 }
 
+function dw(d) {
+    return (d + 360) % 360;
+}
+
+function xyd(p, d, u) {
+    return {
+        x: p.x + Math.cos(d2r(d)) * u,
+        y: p.y + Math.sin(d2r(d)) * u
+    };
+}
+
 class Input {
     constructor(handlers) {
         // Raw key code state
