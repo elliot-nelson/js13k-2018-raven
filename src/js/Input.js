@@ -18,7 +18,7 @@ function d2r(d) {
 }
 
 function dw(d) {
-    return (d + 360) % 360;
+    return (d + 720) % 360;
 }
 
 function xyd(p, d, u) {
