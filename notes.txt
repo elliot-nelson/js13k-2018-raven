@@ -24,3 +24,7 @@ https://www.redblobgames.com/articles/visibility/
 https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/
 
 
+http://totologic.blogspot.com/2014/01/accurate-point-in-triangle-test.html
+
+
+https://www.redblobgames.com/pathfinding/grids/algorithms.html

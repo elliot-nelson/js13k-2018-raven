@@ -12,6 +12,9 @@ class Player {
         this.decel = 160;     // per second
         this.maxSpeed = 40;  // per second
 
+        this.width = 8;
+        this.height = 6;
+
         this.state = 'idle';
     }
 

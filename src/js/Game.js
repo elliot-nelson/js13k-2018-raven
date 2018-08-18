@@ -40,7 +40,8 @@ class Game {
         this.framems = 0;
         this.player = new Player();
         this.player.input = this.input;
-        this.enemies = [];
+        this.enemies = [
+        ];
 
         this.crosshair = {
             x: 0,
@@ -57,7 +58,7 @@ class Game {
 
     update(delta) {
         this.player.update(delta);
-        this.enemies.forEach(enemy => enemy.update(delta));
+        Util.boundEntityWall(this.player);
 
         var crosshairOffsetX = this.player.x - this.canvas.width / 2;
         var crosshairOffsetY = this.player.y - this.canvas.height / 2;
@@ -81,6 +82,12 @@ class Game {
         }
 
         this.facing = r2d(Math.atan2(this.crosshair.y - this.player.y, this.crosshair.x - this.player.x));
+
+        this.friendlySight = this.calculateVisibility(this.player, this.facing, 60);
+
+        this.enemies.forEach(enemy => enemy.update(delta));
+        this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
+
         //console.log([this.crosshair.x,this.crosshair.y,this.facing]);
     }
 
@@ -104,10 +111,10 @@ class Game {
             }
         }
 
-        this.ctx.drawImage(this.images.player, offsetX + this.player.x, offsetY + this.player.y);
+        this.ctx.drawImage(this.images.player, offsetX + this.player.x - 3, offsetY + this.player.y - 2);
 
         this.enemies.forEach(enemy => {
-            this.ctx.drawImage(this.images.enemy, enemy.x, enemy.y);
+            this.ctx.drawImage(this.images.enemy, offsetX + enemy.x, offsetY + enemy.y);
         });
 
         // Light cone
@@ -136,9 +143,21 @@ class Game {
             this.ctx.restore();
         });
 
-        // TODO Totally out of place
-        // This is all just spitballing
-        this.calculateVisibility(this.player, this.facing, 60);
+        this.friendlySight.forEach((triangle, idx) => {
+            this.ctx.save();
+            this.ctx.globalAlpha = 0.3;
+            this.ctx.fillStyle = 'blue';
+            this.ctx.beginPath();
+            this.ctx.moveTo(line.offsetX + triangle[0].x, line.offsetY + triangle[0].y);
+            this.ctx.lineTo(line.offsetX + triangle[1].x, line.offsetY + triangle[1].y);
+            this.ctx.lineTo(line.offsetX + triangle[2].x, line.offsetY + triangle[2].y);
+            this.ctx.closePath();
+            this.ctx.fill();
+            this.ctx.font = '20px serif';
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
+            this.ctx.restore();
+        });
 
         //console.log([this.player.x, this.player.y, this.crosshair.x, this.crosshair.y]);
         // crosshair
@@ -214,7 +233,14 @@ class Game {
         this.crosshair.y = this.player.y;
 
         this.polygonize(level);
+
         this.enemies = [];
+        this.level.enemies.forEach(enemyData => {
+            let enemy = new Enemy();
+            enemy.x = enemyData.x;
+            enemy.y = enemyData.y;
+            this.enemies.push(enemy);
+        });
     }
 
     // Warning: brute force incoming...
@@ -285,7 +311,7 @@ class Game {
     }
 
     pointInBounds(p, bounds) {
-        var fudge = 4;
+        var fudge = 1;
         var a = bounds.p1.x,
             b = bounds.p2.x,
             c = bounds.p1.y,
@@ -335,20 +361,34 @@ class Game {
             var edge = edges[i];
             var angle = r2d(Math.atan2(edge.p1.y - origin.y, edge.p1.x - origin.x));
             if (Util.angleWithin(angle, startAngle, endAngle)) {
-                if (this.input.keys[71]) {
-                    console.log([angle, startAngle, endAngle]);
-                }
                 angles.push(angle);
+                if (angle - 2 >= startAngle) {
+                    angles.push(angle - 2);
+                }
+                if (angle + 2 <= endAngle) {
+                    angles.push(angle + 2);
+                }
             }
         }
-        angles = angles.map(a => dw(a - startAngle))
-                       .sort()
-                       .map(a => dw(a + startAngle));
+
+        if (this.input.keys[71]) console.log([startAngle, endAngle]);
+        if (this.input.keys[71]) console.log(angles);
+        angles = angles.map(a => dw(a - startAngle));
+        if (this.input.keys[71]) console.log(angles);
+        angles.sort((a, b) => a - b);
+        if (this.input.keys[71]) console.log(angles);
+        angles = angles.map(a => dw(a + startAngle));
+        if (this.input.keys[71]) console.log(angles);
+        this.input.keys[71] = undefined;
 
         var triangles = [];
         var lastp;
+        var lastAngle = undefined;
 
         for(i = 0; i < angles.length; i++) {
+            if (angles[i] === lastAngle) continue;
+            lastAngle = angles[i];
+
             let ray = {
                 x: origin.x + Math.cos(d2r(angles[i])) * 1000,
                 y: origin.y + Math.sin(d2r(angles[i])) * 1000
@@ -372,8 +412,7 @@ class Game {
             lastp = ray;
         }
 
-        console.log(triangles);
-        triangles.forEach(triangle => {
+        triangles.forEach((triangle, idx) => {
             this.ctx.save();
             this.ctx.globalAlpha = 0.3;
             this.ctx.fillStyle = 'blue';
@@ -383,8 +422,18 @@ class Game {
             this.ctx.lineTo(line.offsetX + triangle[2].x, line.offsetY + triangle[2].y);
             this.ctx.closePath();
             this.ctx.fill();
+            this.ctx.font = '20px serif';
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
             this.ctx.restore();
         });
+
+                if (this.input.keys[71]) {
+                    this.input.keys[71] = undefined;
+                    console.log(angles);
+                    console.log(angles.sort());
+                    console.log(triangles);
+                }
 
         /*
         for (var i = 0; i < coneAngle; i++) {
@@ -406,5 +455,7 @@ class Game {
 
             line(this.ctx, 'blue', origin, ray, true);
         }*/
+
+        return triangles;
     }
 };
