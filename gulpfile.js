@@ -24,7 +24,7 @@ gulp.task('build:css', () => {
 });
 
 gulp.task('build:assets', () => {
-    gulp.src('src/assets/*.png')
+    gulp.src(['src/assets/*.png', '!src/assets/meta_*.png'])
         .pipe(gulp.dest('dist/assets'));
 });
 

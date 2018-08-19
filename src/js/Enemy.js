@@ -50,6 +50,7 @@ class Enemy {
             this.maxSpeed = 60;
             this.state = 'attack';
         } else if (this.state === 'attack') {
+            // here, we can use the route map
             var angle = Math.atan2(game.player.y - this.y, game.player.x - this.x);
             this.vx += Math.cos(angle) * this.ax * delta;
             this.vy += Math.sin(angle) * this.ay * delta;

@@ -16,8 +16,10 @@ const Util = {
     },
 
     pixelInWall(x, y) {
-        var u = Math.floor(x / 32);
-        var v = Math.floor(y / 32);
+        return Util.tileInWall(Math.floor(x / 32), Math.floor(y / 32));
+    },
+
+    tileInWall(u, v) {
         return game.level.data[v * game.level.width + u] !== 2;
     },
 

@@ -85,6 +85,8 @@ class Game {
 
         this.friendlySight = this.calculateVisibility(this.player, this.facing, 60);
 
+        this.updatePathRoutes();
+
         this.enemies.forEach(enemy => enemy.update(delta));
         this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
 
@@ -100,14 +102,18 @@ class Game {
         //console.log([offsetX, offsetY]);
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        for (var i = 0; i < this.fieldHeight; i++) {
-            for(var j = 0; j < this.fieldWidth; j++) {
-                var tile = this.field[i * this.fieldWidth + j];
+        for (var i = 0; i < this.level.width; i++) {
+            for(var j = 0; j < this.level.height; j++) {
+                var tile = this.level.data[i * this.level.width + j];
                 if (tile === 1) {
                     this.ctx.drawImage(this.images.tiles.wall, offsetX + j * 32, offsetY + i * 32);
                 } else if (tile === 2) {
                     this.ctx.drawImage(this.images.tiles.floor, offsetX + j * 32, offsetY + i * 32);
                 }
+
+                this.ctx.font = '12px serif';
+                this.ctx.fillStyle = 'white';
+                //this.ctx.fillText(this.routes[i * this.level.width + j], offsetX + j * 32 + 4, offsetY + i * 32 + 4);
             }
         }
 
@@ -222,17 +228,16 @@ class Game {
     }
 
     load(level) {
-        this.level = level;
-        this.field = level.data;
-        this.fieldWidth = level.width;
-        this.fieldHeight = level.height;
+        this.level = Object.assign({}, level);
+        this.level.data = this.level.data.slice(0);
 
-        this.player.x = level.player.x;
-        this.player.y = level.player.y;
+        let eb = this.level.enterBounds;
+        this.player.x = (eb.right - eb.left) / 2 + eb.left;
+        this.player.y = (eb.bottom - eb.top) / 2 + eb.top;
         this.crosshair.x = this.player.x;
-        this.crosshair.y = this.player.y;
+        this.crosshair.y = this.player.y - 32;
 
-        this.polygonize(level);
+        this.polygonize(this.level);
 
         this.enemies = [];
         this.level.enemies.forEach(enemyData => {
@@ -457,5 +462,51 @@ class Game {
         }*/
 
         return triangles;
+    }
+
+    updatePathRoutes() {
+        var open = [{ u: Math.floor(this.player.x / 32), v: Math.floor(this.player.y / 32), c: 0 }];
+        var routes = [];
+
+        var proc = (u, v, c) => {
+            if (Util.tileInWall(u, v)) {
+                return;
+            }
+
+            var priorCost = routes[v * this.level.width + u];
+
+            if (this.pointInFriendlySight({ x: u * 32 + 16, y: v * 32 + 16})) {
+                c += 50;
+            } else {
+                c += 2;
+            }
+
+            if (!priorCost || priorCost > c) {
+                open.push({ u, v, c });
+            }
+        }
+
+        /*while(open.length > 0) {
+            var tile = open.shift();
+            routes[tile.v * this.level.width + tile.u] = tile.c;
+
+            proc(tile.u - 1, tile.v, tile.c);
+            proc(tile.u + 1, tile.v, tile.c);
+            proc(tile.u, tile.v - 1, tile.c);
+            proc(tile.u, tile.v + 1, tile.c);
+        }*/
+
+        //console.log(routes);
+        this.routes = routes;
+    }
+
+    pointInFriendlySight(p) {
+        for(let i = 0; i < this.friendlySight.length; i++) {
+            var triangle = this.friendlySight[i];
+            if (Util.pointInTriangle(p, triangle[0], triangle[1], triangle[2])) {
+                return true;
+            }
+        }
+        return false;
     }
 };
