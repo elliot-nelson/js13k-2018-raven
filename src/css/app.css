@@ -3,3 +3,7 @@
     height: 95%;
     border: solid 1px red;
 }
+
+#los {
+    display: none;
+}

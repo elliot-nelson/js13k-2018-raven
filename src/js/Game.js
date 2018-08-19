@@ -22,6 +22,11 @@ class Game {
         this.canvas.height = this.canvas.clientHeight;
         this.ctx = this.canvas.getContext('2d');
 
+        this.losCanvas = document.getElementById('los');
+        this.losCanvas.width = this.canvas.width;
+        this.losCanvas.height = this.canvas.height;
+        this.losCtx = this.losCanvas.getContext('2d');
+
         // Load
         this.images = {
             player: this.loadAsset('assets/player.png'),
@@ -100,6 +105,7 @@ class Game {
         line.offsetY = offsetY;
 
         //console.log([offsetX, offsetY]);
+        this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         for (var i = 0; i < this.level.width; i++) {
@@ -149,21 +155,42 @@ class Game {
             this.ctx.restore();
         });
 
+        this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.friendlySight.forEach((triangle, idx) => {
-            this.ctx.save();
-            this.ctx.globalAlpha = 0.3;
-            this.ctx.fillStyle = 'blue';
-            this.ctx.beginPath();
-            this.ctx.moveTo(line.offsetX + triangle[0].x, line.offsetY + triangle[0].y);
-            this.ctx.lineTo(line.offsetX + triangle[1].x, line.offsetY + triangle[1].y);
-            this.ctx.lineTo(line.offsetX + triangle[2].x, line.offsetY + triangle[2].y);
-            this.ctx.closePath();
-            this.ctx.fill();
-            this.ctx.font = '20px serif';
-            this.ctx.fillStyle = 'white';
-            this.ctx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
-            this.ctx.restore();
+            this.losCtx.save();
+            this.losCtx.fillStyle = 'white';
+            this.losCtx.beginPath();
+            this.losCtx.moveTo(line.offsetX + triangle[0].x, line.offsetY + triangle[0].y);
+            this.losCtx.lineTo(line.offsetX + triangle[1].x, line.offsetY + triangle[1].y);
+            this.losCtx.lineTo(line.offsetX + triangle[2].x, line.offsetY + triangle[2].y);
+            this.losCtx.closePath();
+            this.losCtx.fill();
+            this.losCtx.font = '20px serif';
+            this.losCtx.fillStyle = 'white';
+            this.losCtx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
+            this.losCtx.restore();
         });
+
+        this.losCtx.save();
+        var px = line.offsetX + this.player.x;
+        var py = line.offsetY + this.player.y;
+        var gradient = this.losCtx.createRadialGradient(px, py, 1, px, py, 32+16);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+        gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        this.losCtx.arc(px, py, 32+16, 0, 2 * Math.PI);
+        this.losCtx.fillStyle = gradient;
+        this.losCtx.fill();
+        this.losCtx.restore();
+
+        // Blit visibility
+        this.ctx.save();
+        // lighten, multiply, darken, source-in
+        this.ctx.globalCompositeOperation = 'darken';
+        this.ctx.drawImage(this.losCanvas, 0, 0);
+        this.ctx.restore();
 
         //console.log([this.player.x, this.player.y, this.crosshair.x, this.crosshair.y]);
         // crosshair
