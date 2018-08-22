@@ -43,9 +43,10 @@ class Input {
         this.map[40] = 'down';     // DownArrow
         this.map[37] = 'left';     // LeftArrow
         this.map[39] = 'right';    // RightArrow
-
-        // Toggle mouse lock
-        this.map[80] = 'mouselock';
+        this.map[32] = 'toggle';   // Space
+        this.map[13] = 'toggle';   // Enter
+        this.map[27] = 'escape';   // Escape
+        this.map[75] = 'kill';     // Kill
 
         // Key press handlers
         this.handlers = handlers;
@@ -67,7 +68,7 @@ class Input {
             this.keys[event.keyCode] = true;
 
             if (k) {
-                // Some keys are "stateful" (we evaluate each frame whether they are stil
+                // Some keys are "stateful" (we evaluate each frame whether they are still
                 // held down), other keys are more like events (we want to do something
                 // specific one time on key press). Provide an API for both.
                 //
@@ -75,22 +76,36 @@ class Input {
                 // example, the requestPointerLock() API call is ignored unless it is
                 // triggered by a user input event.
                 this[k] = true;
-                if (this.handlers[k]) {
+
+                if (this.handlers[k] && typeof this.handlers[k] === 'function') {
                     this.handlers[k]();
+                } else if (this.handlers[k] && typeof this.handlers[k].down === 'function') {
+                    this.handlers[k].down();
                 }
             }
         });
 
         document.addEventListener('keyup', event => {
+            var k = this.map[event.keyCode];
+
             this.keys[event.keyCode] = undefined;
 
-            if (this.map[event.keyCode]) {
-                this[this.map[event.keyCode]] = undefined;
+            if (k) {
+                this[k] = undefined;
+
+                if (this.handlers[k] && typeof this.handlers[k].up === 'function') {
+                    this.handlers[k].up();
+                }
             }
         });
 
         document.addEventListener('mousemove', event => {
-            this.handlers['mousemove'](event.movementX, event.movementY);
+            this.handlers['mousemove'](event.movementX, event.movementY, event.clientX, event.clientY);
+        });
+
+        document.addEventListener('click', event => {
+            // TODO: Do we care where they clicked? or we just assume it clicks where mouse was
+            this.handlers['mouseclick']();
         });
 
         return this;

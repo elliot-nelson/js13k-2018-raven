@@ -10,24 +10,28 @@ class Player {
 
         this.accel = 200;     // per second
         this.decel = 160;     // per second
-        this.maxSpeed = 40;  // per second
+        this.maxSpeed = 40;   // per second
 
         this.width = 8;
         this.height = 6;
 
-        this.state = 'idle';
+        this.dead = false;
     }
 
     update(delta) {
         // TODO
         // Classic "fast diagonal" problem below; will fix later if I care enough.
 
-        if (this.input.up) {
+        if (this.dead) {
+            return;
+        }
+
+        if (game.input.up) {
             this.vy -= this.accel * delta;
             if (this.vy < -this.maxSpeed) {
                 this.vy = -this.maxSpeed;
             }
-        } else if (this.input.down) {
+        } else if (game.input.down) {
             this.vy += this.accel * delta;
             if (this.vy > this.maxSpeed) {
                 this.vy = this.maxSpeed;
@@ -39,12 +43,12 @@ class Player {
                 this.vy = 0;
             }
         }
-        if (this.input.left) {
+        if (game.input.left) {
             this.vx -= this.accel * delta;
             if (this.vx < -this.maxSpeed) {
                 this.vx = -this.maxSpeed;
             }
-        } else if (this.input.right) {
+        } else if (game.input.right) {
             this.vx += this.accel * delta;
             if (this.vx > this.maxSpeed) {
                 this.vx = this.maxSpeed;

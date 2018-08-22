@@ -4,6 +4,10 @@ const Util = {
         return dw(angle - b1) < dw(b2 - b1);
     },
 
+    pointNearPoint(p1, p2, range) {
+        return (distance(p1, p2) <= range);
+    },
+
     // Return true if point is inside given triangle.
     // This is the barycentric coordinate check.
     pointInTriangle(p, t1, t2, t3) {

@@ -21,6 +21,7 @@ class Game {
         this.canvas.width = this.canvas.clientWidth;
         this.canvas.height = this.canvas.clientHeight;
         this.ctx = this.canvas.getContext('2d');
+        this.canvasBounds = this.canvas.getBoundingClientRect();
 
         this.losCanvas = document.getElementById('los');
         this.losCanvas.width = this.canvas.width;
@@ -31,6 +32,8 @@ class Game {
         this.images = {
             player: this.loadAsset('assets/player.png'),
             enemy: this.loadAsset('assets/enemy.png'),
+            camera: this.loadAsset('assets/camera.png'),
+            terminal: this.loadAsset('assets/terminal.png'),
             tiles: {
                 floor: this.loadAsset('assets/floor.png'),
                 wall: this.loadAsset('assets/wall.png')
@@ -38,170 +41,290 @@ class Game {
         };
 
         this.input = new Input({
-            mouselock: this.toggleMouseLock.bind(this),
-            mousemove: this.onMouseMove.bind(this)
+            up: this.onUp.bind(this),
+            down: this.onDown.bind(this),
+            left: this.onLeft.bind(this),
+            right: this.onRight.bind(this),
+            toggle: this.onToggle.bind(this),
+            escape: {
+                // For the ESC key, wait until the user releases the key. This is simplistic
+                // and slightly delays input, but is the easy to make sure that if we request
+                // pointer lock, it won't be immediately released again by the browser.
+                up: this.onEscape.bind(this)
+            },
+            mousemove: this.onMouseMove.bind(this),
+            mouseclick: this.onMouseClick.bind(this),
+            kill: () => {
+                this.playerDied();
+            }
         }).init();
 
         this.framems = 0;
-        this.player = new Player();
-        this.player.input = this.input;
-        this.enemies = [
-        ];
+        this.player = undefined;
+        this.enemies = [];
 
-        this.crosshair = {
-            x: 0,
-            y: 0
-        };
+        this.crosshair = { x: 0, y: 0 };
+        this.mouse = { x: 0, y: 0 };
+
+        // Yes, technically, facing and fov are properties of the player. But because
+        // we treat the crosshair as a separate entity, it's easier to just make it
+        // part of game state.
+        this.facing = 0;
+        this.fov = 120;
 
         this.mouselocked = false;
+        this.paused = true;
+        this.renderPrep = true;
         document.addEventListener('pointerlockchange', this.onMouseLock.bind(this));
         document.addEventListener('mozpointerlockchange', this.onMouseLock.bind(this));
         document.addEventListener('webkitpointerlockchange', this.onMouseLock.bind(this));
+
+        this.startMenu = new Menu(
+            [
+                {
+                    text: 'START',
+                    handler: () => {
+                        this.pendingLevelIndex = 0;
+                        console.log("set " + this.pendingLevelIndex);
+                        this.unpause();
+                    }
+                }
+            ],
+            () => false
+        );
+
+        this.pauseMenu = new Menu(
+            [
+                {
+                    text: 'RESUME',
+                    handler: () => {
+                        this.unpause();
+                    }
+                },
+                {
+                    text: 'RESTART LEVEL',
+                    handler: () => {
+                        this.pendingLevelIndex = this.levelIndex;
+                        this.unpause();
+                    }
+                }
+            ],
+            () => this.unpause()
+        );
 
         return this;
     }
 
     update(delta) {
-        this.player.update(delta);
-        Util.boundEntityWall(this.player);
-
-        var crosshairOffsetX = this.player.x - this.canvas.width / 2;
-        var crosshairOffsetY = this.player.y - this.canvas.height / 2;
-        var cd = 4;
-        var bound = {
-            left: crosshairOffsetX + cd,
-            right: crosshairOffsetX + this.canvas.width - cd,
-            top: crosshairOffsetY + cd,
-            bottom: crosshairOffsetY + this.canvas.height - cd
-        };
-
-        if (this.crosshair.x < bound.left) {
-            this.crosshair.x = bound.left;
-        } else if (this.crosshair.x > bound.right) {
-            this.crosshair.x = bound.right;
-        }
-        if (this.crosshair.y < bound.top) {
-            this.crosshair.y = bound.top;
-        } else if (this.crosshair.y > bound.bottom) {
-            this.crosshair.y = bound.bottom;
+        if (typeof this.pendingLevelIndex !== 'undefined') {
+            this.load(this.pendingLevelIndex);
+            this.pendingLevelIndex = undefined;
         }
 
-        this.facing = r2d(Math.atan2(this.crosshair.y - this.player.y, this.crosshair.x - this.player.x));
+        if (this.menu) {
+            this.menu.update();
+        } else {
+            if (this.player.dead) {
+                this.deathFrame++;
+            }
 
-        this.friendlySight = this.calculateVisibility(this.player, this.facing, 60);
+            this.player.update(delta);
+            Util.boundEntityWall(this.player);
 
-        this.updatePathRoutes();
+            var crosshairOffsetX = this.player.x - this.canvas.width / 2;
+            var crosshairOffsetY = this.player.y - this.canvas.height / 2;
+            var cd = 4;
+            var bound = {
+                left: crosshairOffsetX + cd,
+                right: crosshairOffsetX + this.canvas.width - cd,
+                top: crosshairOffsetY + cd,
+                bottom: crosshairOffsetY + this.canvas.height - cd
+            };
 
-        this.enemies.forEach(enemy => enemy.update(delta));
-        this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
+            if (this.crosshair.x < bound.left) {
+                this.crosshair.x = bound.left;
+            } else if (this.crosshair.x > bound.right) {
+                this.crosshair.x = bound.right;
+            }
+            if (this.crosshair.y < bound.top) {
+                this.crosshair.y = bound.top;
+            } else if (this.crosshair.y > bound.bottom) {
+                this.crosshair.y = bound.bottom;
+            }
 
-        //console.log([this.crosshair.x,this.crosshair.y,this.facing]);
+            this.facing = r2d(Math.atan2(this.crosshair.y - this.player.y, this.crosshair.x - this.player.x));
+
+            this.friendlySight = this.calculateVisibility(this.player, this.facing, this.fov);
+
+            this.updatePathRoutes();
+
+            this.enemies.forEach(enemy => enemy.update(delta));
+            this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
+
+            if (!this.player.dead) {
+                this.enemies.forEach(enemy => {
+                    if (Util.pointNearPoint(enemy, this.player, enemy.killRadius)) {
+                        this.playerDied();
+                    }
+                });
+            }
+
+            this.renderPrep = true;
+        }
     }
 
     render() {
-        var offsetX = this.canvas.width / 2 - this.player.x;
-        var offsetY = this.canvas.height / 2 - this.player.y;
-        line.offsetX = offsetX;
-        line.offsetY = offsetY;
-
-        //console.log([offsetX, offsetY]);
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        for (var i = 0; i < this.level.width; i++) {
-            for(var j = 0; j < this.level.height; j++) {
-                var tile = this.level.data[i * this.level.width + j];
-                if (tile === 1) {
-                    this.ctx.drawImage(this.images.tiles.wall, offsetX + j * 32, offsetY + i * 32);
-                } else if (tile === 2) {
-                    this.ctx.drawImage(this.images.tiles.floor, offsetX + j * 32, offsetY + i * 32);
-                }
+        if (this.level && this.renderPrep) {
+            var offsetX = this.canvas.width / 2 - this.player.x;
+            var offsetY = this.canvas.height / 2 - this.player.y;
+            line.offsetX = offsetX;
+            line.offsetY = offsetY;
 
-                this.ctx.font = '12px serif';
-                this.ctx.fillStyle = 'white';
-                //this.ctx.fillText(this.routes[i * this.level.width + j], offsetX + j * 32 + 4, offsetY + i * 32 + 4);
+            if (this.player.dead) {
+                let scale = Math.min(3, 1 + this.deathFrame / 50);
+                this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+                this.ctx.rotate(d2r(this.deathFrame / 5));
+                this.ctx.scale(scale, scale);
+                this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
+            }
+
+            //console.log([offsetX, offsetY]);
+
+            for (var i = 0; i < this.level.height; i++) {
+                for(var j = 0; j < this.level.width ; j++) {
+                    var tile = this.level.data[i * this.level.width + j];
+                    if (tile === 1) {
+                        this.ctx.drawImage(this.images.tiles.wall, offsetX + j * 32, offsetY + i * 32);
+                    } else if (tile === 2) {
+                        this.ctx.drawImage(this.images.tiles.floor, offsetX + j * 32, offsetY + i * 32);
+                    }
+
+                    this.ctx.font = '12px serif';
+                    this.ctx.fillStyle = 'white';
+                    //this.ctx.fillText(this.routes[i * this.level.width + j], offsetX + j * 32 + 4, offsetY + i * 32 + 4);
+                }
+            }
+
+            this.ctx.drawImage(this.images.player, offsetX + this.player.x - 3, offsetY + this.player.y - 2);
+
+            this.enemies.forEach(enemy => {
+                this.ctx.drawImage(this.images.enemy, offsetX + enemy.x, offsetY + enemy.y);
+            });
+
+            // Light cone
+            /*var cone1 = xyd(this.player, dw(this.facing - 30), 50);
+            var cone2 = xyd(this.player, dw(this.facing + 30), 50);
+            this.ctx.save();
+            this.ctx.strokeStyle = 'yellow';
+            this.ctx.beginPath();
+            this.ctx.moveTo(offsetX + this.player.x, offsetY + this.player.y);
+            this.ctx.lineTo(offsetX + cone1.x, offsetY + cone1.y);
+            this.ctx.lineTo(offsetX + cone2.x, offsetY + cone2.y);
+            this.ctx.closePath();
+            this.ctx.stroke();
+            this.ctx.restore();*/
+
+            // los edges
+            this.losEdges.forEach(edge => {
+                this.ctx.save();
+                this.ctx.globalAlpha = 0.5;
+                this.ctx.strokeStyle = 'yellow';
+                this.ctx.setLineDash([4, 2]);
+                this.ctx.beginPath();
+                this.ctx.moveTo(offsetX + edge.p1.x, offsetY + edge.p1.y);
+                this.ctx.lineTo(offsetX + edge.p2.x, offsetY + edge.p2.y);
+                this.ctx.stroke();
+                this.ctx.restore();
+            });
+
+            this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            if (this.player.dead) {
+                let opacity = Math.max(0, 0.8 - this.deathFrame / 40);
+                this.losCtx.fillStyle = 'rgba(0, 0, 0, ' + opacity + ')';
+                this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            } else {
+                this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.friendlySight.forEach((triangle, idx) => {
+                    this.losCtx.save();
+                    this.losCtx.fillStyle = 'white';
+                    this.losCtx.beginPath();
+                    this.losCtx.moveTo(line.offsetX + triangle[0].x, line.offsetY + triangle[0].y);
+                    this.losCtx.lineTo(line.offsetX + triangle[1].x, line.offsetY + triangle[1].y);
+                    this.losCtx.lineTo(line.offsetX + triangle[2].x, line.offsetY + triangle[2].y);
+                    this.losCtx.closePath();
+                    this.losCtx.fill();
+                    this.losCtx.font = '20px serif';
+                    this.losCtx.fillStyle = 'white';
+                    this.losCtx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
+                    this.losCtx.restore();
+                });
+
+                this.losCtx.save();
+                var px = line.offsetX + this.player.x;
+                var py = line.offsetY + this.player.y;
+                var gradient = this.losCtx.createRadialGradient(px, py, 1, px, py, 32+16);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+                gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                this.losCtx.arc(px, py, 32+16, 0, 2 * Math.PI);
+                this.losCtx.fillStyle = gradient;
+                this.losCtx.fill();
+                this.losCtx.restore();
+            }
+
+            // Blit visibility
+            this.ctx.save();
+            // lighten, multiply, darken, source-in
+            this.ctx.globalCompositeOperation = 'darken';
+            this.ctx.drawImage(this.losCanvas, 0, 0);
+            this.ctx.restore();
+
+            if (!this.player.dead) {
+                //console.log([this.player.x, this.player.y, this.crosshair.x, this.crosshair.y]);
+                // crosshair
+                line(this.ctx, 'red',
+                    { x: offsetX + this.crosshair.x, y: offsetY + this.crosshair.y },
+                    { x: offsetX + this.crosshair.x + 2, y: offsetY + this.crosshair.y +2 });
+                line(this.ctx, 'red',
+                    { x: offsetX + this.crosshair.x + 1, y: offsetY + this.crosshair.y },
+                    { x: offsetX + this.crosshair.x + 3, y: offsetY + this.crosshair.y +2 });
+
+                //line(this.ctx, 'yellow', { x: this.player.x, y: this.player.y }, { x: kx, y: ky });
+            }
+
+            this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            if (this.player.dead) {
+                /*this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                let color = Math.min(240, this.deathFrame * 4 + 50);
+                let opacity = Math.min(0.4, 0.4 + this.deathFrame / 40);
+                this.losCtx.fillStyle = 'rgba(' + color + ', 0, 0, ' + opacity + ')';
+                this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);*/
+
+                let opacity = Math.min(0.8, this.deathFrame / 40);
+                this.ctx.fillStyle = 'rgba(204, 0, 0, ' + opacity + ')';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                let size = Math.min(80, 20 + this.deathFrame / 5);
+                opacity = Math.min(0.5, this.deathFrame / 50);
+                this.ctx.font = '' + size + 'px serif';
+                let x = this.canvas.width / 2 - this.ctx.measureText('YOU ARE DEAD').width / 2;
+                this.ctx.fillStyle = 'rgba(255, 255, 255, ' + opacity + ')';
+                this.ctx.fillText('YOU ARE DEAD', x, this.canvas.height / 2);
             }
         }
 
-        this.ctx.drawImage(this.images.player, offsetX + this.player.x - 3, offsetY + this.player.y - 2);
-
-        this.enemies.forEach(enemy => {
-            this.ctx.drawImage(this.images.enemy, offsetX + enemy.x, offsetY + enemy.y);
-        });
-
-        // Light cone
-        /*var cone1 = xyd(this.player, dw(this.facing - 30), 50);
-        var cone2 = xyd(this.player, dw(this.facing + 30), 50);
-        this.ctx.save();
-        this.ctx.strokeStyle = 'yellow';
-        this.ctx.beginPath();
-        this.ctx.moveTo(offsetX + this.player.x, offsetY + this.player.y);
-        this.ctx.lineTo(offsetX + cone1.x, offsetY + cone1.y);
-        this.ctx.lineTo(offsetX + cone2.x, offsetY + cone2.y);
-        this.ctx.closePath();
-        this.ctx.stroke();
-        this.ctx.restore();*/
-
-        // los edges
-        this.losEdges.forEach(edge => {
-            this.ctx.save();
-            this.ctx.globalAlpha = 0.5;
-            this.ctx.strokeStyle = 'yellow';
-            this.ctx.setLineDash([4, 2]);
-            this.ctx.beginPath();
-            this.ctx.moveTo(offsetX + edge.p1.x, offsetY + edge.p1.y);
-            this.ctx.lineTo(offsetX + edge.p2.x, offsetY + edge.p2.y);
-            this.ctx.stroke();
-            this.ctx.restore();
-        });
-
-        this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.friendlySight.forEach((triangle, idx) => {
-            this.losCtx.save();
-            this.losCtx.fillStyle = 'white';
-            this.losCtx.beginPath();
-            this.losCtx.moveTo(line.offsetX + triangle[0].x, line.offsetY + triangle[0].y);
-            this.losCtx.lineTo(line.offsetX + triangle[1].x, line.offsetY + triangle[1].y);
-            this.losCtx.lineTo(line.offsetX + triangle[2].x, line.offsetY + triangle[2].y);
-            this.losCtx.closePath();
-            this.losCtx.fill();
-            this.losCtx.font = '20px serif';
-            this.losCtx.fillStyle = 'white';
-            this.losCtx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
-            this.losCtx.restore();
-        });
-
-        this.losCtx.save();
-        var px = line.offsetX + this.player.x;
-        var py = line.offsetY + this.player.y;
-        var gradient = this.losCtx.createRadialGradient(px, py, 1, px, py, 32+16);
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-        gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        this.losCtx.arc(px, py, 32+16, 0, 2 * Math.PI);
-        this.losCtx.fillStyle = gradient;
-        this.losCtx.fill();
-        this.losCtx.restore();
-
-        // Blit visibility
-        this.ctx.save();
-        // lighten, multiply, darken, source-in
-        this.ctx.globalCompositeOperation = 'darken';
-        this.ctx.drawImage(this.losCanvas, 0, 0);
-        this.ctx.restore();
-
-        //console.log([this.player.x, this.player.y, this.crosshair.x, this.crosshair.y]);
-        // crosshair
-        line(this.ctx, 'red',
-            { x: offsetX + this.crosshair.x, y: offsetY + this.crosshair.y },
-            { x: offsetX + this.crosshair.x + 2, y: offsetY + this.crosshair.y +2 });
-        line(this.ctx, 'red',
-            { x: offsetX + this.crosshair.x + 1, y: offsetY + this.crosshair.y },
-            { x: offsetX + this.crosshair.x + 3, y: offsetY + this.crosshair.y +2 });
-
-        //line(this.ctx, 'yellow', { x: this.player.x, y: this.player.y }, { x: kx, y: ky });
+        if (this.menu) {
+            this.menu.render();
+        }
     }
 
     frame(nextms) {
@@ -221,8 +344,7 @@ class Game {
     }
 
     start() {
-        this.load(LevelCache[0]);
-        this.framems = performance.now();
+        this.openMenu(this.startMenu);
         window.requestAnimationFrame(this.frame.bind(this));
     }
 
@@ -232,33 +354,94 @@ class Game {
         return img;
     }
 
-    toggleMouseLock() {
-        if (this.mouselocked) {
-            document.exitPointerLock();
-        } else {
-            this.canvas.requestPointerLock();
+    openMenu(menu) {
+        this.menu = menu;
+        this.menu.open();
+    }
+
+    playerDied() {
+        this.player.dead = true;
+        this.deathFrame = 0;
+    }
+
+    //
+    // Event Handlers
+    //
+
+    unpause() {
+        console.log('reuqest it');
+        this.canvas.requestPointerLock();
+    }
+
+    onUp() {
+        if (this.menu) this.menu.onUp();
+    }
+
+    onDown() {
+        if (this.menu) this.menu.onDown();
+    }
+
+    onLeft() {
+    }
+
+    onRight() {
+    }
+
+    onToggle() {
+        if (this.menu) {
+            this.menu.select();
+        } else if (this.player.dead) {
+            this.pendingLevelIndex = this.levelIndex;
         }
+    }
+
+    onEscape() {
+        if (this.menu) this.menu.onEscape();
     }
 
     onMouseLock() {
         if (document.pointerLockElement === this.canvas) {
+            console.log('mouselock on');
             this.mouselocked = true;
+            this.paused = false;
+            this.menu = undefined;
+            this.framems = performance.now();
         } else {
+            console.log('mouselock off');
             this.mouselocked = false;
+            this.paused = true;
+            this.openMenu(this.pauseMenu);
         }
-        console.log(["mouselocked", this.mouselocked]);
     }
 
-    onMouseMove(deltaX, deltaY) {
-        this.crosshair.x += deltaX;
-        this.crosshair.y += deltaY;
+    onMouseMove(deltaX, deltaY, clientX, clientY) {
+        if (!this.paused) {
+            this.crosshair.x += deltaX;
+            this.crosshair.y += deltaY;
+        }
+
+        this.mouse.x = clientX - this.canvasBounds.left;
+        this.mouse.y = clientY - this.canvasBounds.top;
+
+        if (this.menu) this.menu.onMouseMove(this.mouse.x, this.mouse.y);
     }
 
-    load(level) {
-        this.level = Object.assign({}, level);
+    onMouseClick() {
+        if (this.menu) {
+            this.menu.select();
+        } else if (this.player.dead) {
+            this.pendingLevelIndex = this.levelIndex;
+        }
+    }
+
+    load(levelIndex) {
+        this.levelIndex = levelIndex;
+        this.level = Object.assign({}, LevelCache[levelIndex]);
         this.level.data = this.level.data.slice(0);
 
         let eb = this.level.enterBounds;
+
+        this.player = new Player();
         this.player.x = (eb.right - eb.left) / 2 + eb.left;
         this.player.y = (eb.bottom - eb.top) / 2 + eb.top;
         this.crosshair.x = this.player.x;
@@ -273,6 +456,9 @@ class Game {
             enemy.y = enemyData.y;
             this.enemies.push(enemy);
         });
+
+        console.log("loaded " + this.levelIndex);
+        this.renderPrep = false;
     }
 
     // Warning: brute force incoming...
@@ -387,6 +573,12 @@ class Game {
         let edges = this.losEdges;
         let startAngle = dw(facing - coneAngle / 2);
         let endAngle = dw(facing + coneAngle / 2);
+
+        // This "fudge factor" moves the LOS origin slightly behind the player.
+        /*origin = {
+            x: origin.x - Math.cos(r2d(facing)) * 2,
+            y: origin.y - Math.sin(r2d(facing)) * 2
+        };*/
 
         let angles = [startAngle, endAngle];
         for (var i = 0; i < edges.length; i++) {

@@ -11,6 +11,8 @@ class Enemy {
         this.width = 8;
         this.height = 6;
 
+        this.killRadius = 6;
+
         this.travelSeconds = 2;
         this.state = 'idle';
     }
