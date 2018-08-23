@@ -6,6 +6,7 @@ const sourcemaps = require("gulp-sourcemaps");
 const concat = require("gulp-concat");
 const del = require("del");
 const add = require("gulp-add");
+const uglify = require('gulp-uglify');
 
 const levelPacker = require("./level-packer");
 
@@ -32,9 +33,11 @@ gulp.task('build:js', () => {
     gulp.src('src/js/*.js')
         .pipe(add("LevelCache.js", levelPacker.packAll("src/levels/level*.json"), true))
         .pipe(sourcemaps.init())
-        .pipe(babel())
         .pipe(concat('app.js'))
+        .pipe(babel())
         .pipe(size())
+        //.pipe(uglify())
+        //.pipe(size())
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
