@@ -10,7 +10,7 @@ class Player {
 
         this.accel = 200;     // per second
         this.decel = 160;     // per second
-        this.maxSpeed = 40;   // per second
+        this.maxSpeed = 100;   // per second
 
         this.width = 8;
         this.height = 6;
@@ -63,7 +63,28 @@ class Player {
 
         this.x += this.vx * delta;
         this.y += this.vy * delta;
+    }
 
-//        console.log([this.x,this.y,this.vx,this.vy,this.ax,this.ay]);
+    render() {
+        game.ctx.drawImage(Asset.img.player, game.offset.x + this.x - 3, game.offset.y + this.y - 2);
+    }
+
+    renderCrosshair() {
+        let x = game.offset.x + game.crosshair.x;
+        let y = game.offset.y + game.crosshair.y;
+
+        game.ctx.strokeStyle = 'rgba(255, 24, 24, 0.9)';
+        game.ctx.beginPath();
+        [
+            [-2, -2],
+            [-2, 2],
+            [2, -2],
+            [2, 2]
+        ].forEach(([dx, dy]) => {
+            game.ctx.moveTo(x + dx * 3, y + dy);
+            game.ctx.lineTo(x + dx, y + dy);
+            game.ctx.lineTo(x + dx, y + dy * 3);
+        });
+        game.ctx.stroke();
     }
 }

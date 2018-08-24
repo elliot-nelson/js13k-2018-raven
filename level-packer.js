@@ -61,6 +61,8 @@ const levelPacker = {
         const level = {
             name: raw.properties.LevelName,
             enemies: [],
+            cameras: [],
+            terminals: [],
             width: width,
             height: height,
             data: terrainLayer.data
@@ -88,6 +90,21 @@ const levelPacker = {
                     y: object.y
                 });
             }
+            if (object.type === "camera") {
+                level.cameras.push({
+                    u: Math.floor(object.x / 32),
+                    v: Math.floor(object.y / 32),
+                    control: object.properties.Control,
+                    facing: object.properties.Facing
+                });
+            }
+            if (object.type === "terminal") {
+                level.terminals.push({
+                    u: Math.floor(object.x / 32),
+                    v: Math.floor(object.y / 32),
+                    control: object.properties.Control
+                });
+            }
         }
 
         for (let i = 0; i < height; i++) {
@@ -97,8 +114,7 @@ const levelPacker = {
                     enterBounds.bottom = Math.max(enterBounds.bottom, i * 32 + 32);
                     enterBounds.left = Math.min(enterBounds.left, j * 32);
                     enterBounds.right = Math.max(enterBounds.right, j * 32 + 32);
-                }
-                if (metaLayer.data[i * width + j] === 4) {
+                } else if (metaLayer.data[i * width + j] === 4) {
                     exitBounds.top = Math.min(exitBounds.top, i * 32);
                     exitBounds.bottom = Math.max(exitBounds.bottom, i * 32 + 32);
                     exitBounds.left = Math.min(exitBounds.left, j * 32);

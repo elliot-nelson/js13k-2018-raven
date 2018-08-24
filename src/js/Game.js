@@ -28,17 +28,10 @@ class Game {
         this.losCanvas.height = this.canvas.height;
         this.losCtx = this.losCanvas.getContext('2d');
 
-        // Load
-        this.images = {
-            player: this.loadAsset('assets/player.png'),
-            enemy: this.loadAsset('assets/enemy.png'),
-            camera: this.loadAsset('assets/camera.png'),
-            terminal: this.loadAsset('assets/terminal.png'),
-            tiles: {
-                floor: this.loadAsset('assets/floor.png'),
-                wall: this.loadAsset('assets/wall.png')
-            }
-        };
+        this.tileCanvas = document.getElementById('tile');
+        this.tileCtx = this.tileCanvas.getContext('2d');
+
+        Asset.loadAllAssets();
 
         this.input = new Input({
             up: this.onUp.bind(this),
@@ -62,6 +55,7 @@ class Game {
         this.framems = 0;
         this.player = undefined;
         this.enemies = [];
+        this.framehistory = [];
 
         this.crosshair = { x: 0, y: 0 };
         this.mouse = { x: 0, y: 0 };
@@ -131,14 +125,22 @@ class Game {
             this.player.update(delta);
             Util.boundEntityWall(this.player);
 
-            var crosshairOffsetX = this.player.x - this.canvas.width / 2;
-            var crosshairOffsetY = this.player.y - this.canvas.height / 2;
+            this.terminals.forEach(terminal => terminal.update(delta));
+            this.cameras.forEach(camera => camera.update(delta));
+
+            this.offset = {
+                x: this.canvas.width / 2 - this.player.x,
+                y: this.canvas.height / 2 - this.player.y,
+                crosshairX: this.player.x - this.canvas.width / 2,
+                crosshairY: this.player.y - this.canvas.height / 2
+            };
+
             var cd = 4;
             var bound = {
-                left: crosshairOffsetX + cd,
-                right: crosshairOffsetX + this.canvas.width - cd,
-                top: crosshairOffsetY + cd,
-                bottom: crosshairOffsetY + this.canvas.height - cd
+                left: this.offset.crosshairX + cd,
+                right: this.offset.crosshairX + this.canvas.width - cd,
+                top: this.offset.crosshairY + cd,
+                bottom: this.offset.crosshairY + this.canvas.height - cd
             };
 
             if (this.crosshair.x < bound.left) {
@@ -154,7 +156,13 @@ class Game {
 
             this.facing = r2d(Math.atan2(this.crosshair.y - this.player.y, this.crosshair.x - this.player.x));
 
-            this.friendlySight = this.calculateVisibility(this.player, this.facing, this.fov);
+            this.friendlySight = [];
+            this.friendlySight = this.friendlySight.concat(this.calculateVisibility(this.player, this.facing, this.fov, 4, 5));
+            this.cameras.forEach(camera => {
+                if (camera.enabled) {
+                    this.friendlySight = this.friendlySight.concat(this.calculateVisibility(camera, camera.facing, camera.fov, 12, 0));
+                }
+            });
 
             this.updatePathRoutes();
 
@@ -167,6 +175,14 @@ class Game {
                         this.playerDied();
                     }
                 });
+
+                let activeTerminal = undefined;
+                this.terminals.forEach(terminal => {
+                    if (Util.pointNearPoint(terminal, this.player, terminal.toggleRadius)) {
+                        activeTerminal = terminal;
+                    }
+                });
+                this.activeTerminal = activeTerminal;
             }
 
             this.renderPrep = true;
@@ -178,11 +194,6 @@ class Game {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         if (this.level && this.renderPrep) {
-            var offsetX = this.canvas.width / 2 - this.player.x;
-            var offsetY = this.canvas.height / 2 - this.player.y;
-            line.offsetX = offsetX;
-            line.offsetY = offsetY;
-
             if (this.player.dead) {
                 let scale = Math.min(3, 1 + this.deathFrame / 50);
                 this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
@@ -191,28 +202,27 @@ class Game {
                 this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
             }
 
-            //console.log([offsetX, offsetY]);
+            this.ctx.drawImage(this.tileCanvas, this.offset.x, this.offset.y);
 
-            for (var i = 0; i < this.level.height; i++) {
+            /*for (var i = 0; i < this.level.height; i++) {
                 for(var j = 0; j < this.level.width ; j++) {
                     var tile = this.level.data[i * this.level.width + j];
                     if (tile === 1) {
-                        this.ctx.drawImage(this.images.tiles.wall, offsetX + j * 32, offsetY + i * 32);
+                        //this.ctx.drawImage(Asset.tile.wall, this.offset.x + j * 32, this.offset.y + i * 32);
                     } else if (tile === 2) {
-                        this.ctx.drawImage(this.images.tiles.floor, offsetX + j * 32, offsetY + i * 32);
+                        //this.ctx.drawImage(Asset.tile.floor, this.offset.x + j * 32, this.offset.y + i * 32);
                     }
 
                     this.ctx.font = '12px serif';
                     this.ctx.fillStyle = 'white';
                     //this.ctx.fillText(this.routes[i * this.level.width + j], offsetX + j * 32 + 4, offsetY + i * 32 + 4);
                 }
-            }
+            }*/
 
-            this.ctx.drawImage(this.images.player, offsetX + this.player.x - 3, offsetY + this.player.y - 2);
-
-            this.enemies.forEach(enemy => {
-                this.ctx.drawImage(this.images.enemy, offsetX + enemy.x, offsetY + enemy.y);
-            });
+            this.terminals.forEach(terminal => terminal.render());
+            this.cameras.forEach(camera => camera.render());
+            this.player.render();
+            this.enemies.forEach(enemy => enemy.render());
 
             // Light cone
             /*var cone1 = xyd(this.player, dw(this.facing - 30), 50);
@@ -234,8 +244,8 @@ class Game {
                 this.ctx.strokeStyle = 'yellow';
                 this.ctx.setLineDash([4, 2]);
                 this.ctx.beginPath();
-                this.ctx.moveTo(offsetX + edge.p1.x, offsetY + edge.p1.y);
-                this.ctx.lineTo(offsetX + edge.p2.x, offsetY + edge.p2.y);
+                this.ctx.moveTo(this.offset.x + edge.p1.x, this.offset.y + edge.p1.y);
+                this.ctx.lineTo(this.offset.x + edge.p2.x, this.offset.y + edge.p2.y);
                 this.ctx.stroke();
                 this.ctx.restore();
             });
@@ -251,23 +261,21 @@ class Game {
                 this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
                 this.friendlySight.forEach((triangle, idx) => {
-                    this.losCtx.save();
                     this.losCtx.fillStyle = 'white';
                     this.losCtx.beginPath();
-                    this.losCtx.moveTo(line.offsetX + triangle[0].x, line.offsetY + triangle[0].y);
-                    this.losCtx.lineTo(line.offsetX + triangle[1].x, line.offsetY + triangle[1].y);
-                    this.losCtx.lineTo(line.offsetX + triangle[2].x, line.offsetY + triangle[2].y);
+                    this.losCtx.moveTo(this.offset.x + triangle[0].x, this.offset.y + triangle[0].y);
+                    this.losCtx.lineTo(this.offset.x + triangle[1].x, this.offset.y + triangle[1].y);
+                    this.losCtx.lineTo(this.offset.x + triangle[2].x, this.offset.y + triangle[2].y);
                     this.losCtx.closePath();
                     this.losCtx.fill();
-                    this.losCtx.font = '20px serif';
-                    this.losCtx.fillStyle = 'white';
-                    this.losCtx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
-                    this.losCtx.restore();
+                    //this.losCtx.font = '20px serif';
+                    //this.losCtx.fillStyle = 'white';
+                    //this.losCtx.fillText(idx, this.offset.x + triangle[1].x, this.offset.y + triangle[1].y + 15);
                 });
 
-                this.losCtx.save();
-                var px = line.offsetX + this.player.x;
-                var py = line.offsetY + this.player.y;
+                /*this.losCtx.save();
+                var px = this.offset.x + this.player.x;
+                var py = this.offset.y + this.player.y;
                 var gradient = this.losCtx.createRadialGradient(px, py, 1, px, py, 32+16);
                 gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
                 gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
@@ -275,27 +283,31 @@ class Game {
                 this.losCtx.arc(px, py, 32+16, 0, 2 * Math.PI);
                 this.losCtx.fillStyle = gradient;
                 this.losCtx.fill();
-                this.losCtx.restore();
+                this.losCtx.restore();*/
             }
 
             // Blit visibility
             this.ctx.save();
-            // lighten, multiply, darken, source-in
+            // attempted: lighten, multiply, darken, source-in (darken looks best for shadows so far)
             this.ctx.globalCompositeOperation = 'darken';
             this.ctx.drawImage(this.losCanvas, 0, 0);
             this.ctx.restore();
 
             if (!this.player.dead) {
-                //console.log([this.player.x, this.player.y, this.crosshair.x, this.crosshair.y]);
-                // crosshair
-                line(this.ctx, 'red',
-                    { x: offsetX + this.crosshair.x, y: offsetY + this.crosshair.y },
-                    { x: offsetX + this.crosshair.x + 2, y: offsetY + this.crosshair.y +2 });
-                line(this.ctx, 'red',
-                    { x: offsetX + this.crosshair.x + 1, y: offsetY + this.crosshair.y },
-                    { x: offsetX + this.crosshair.x + 3, y: offsetY + this.crosshair.y +2 });
+                this.player.renderCrosshair();
 
-                //line(this.ctx, 'yellow', { x: this.player.x, y: this.player.y }, { x: kx, y: ky });
+                // Interactivity indicator
+                if (this.activeTerminal) {
+                    let radius = (this.framems % 1000 < 500 ? 4 : 6);
+                    this.ctx.fillStyle = 'rgba(204, 204, 204, 168)';
+                    this.ctx.strokeStyle = 'rgba(204, 204, 204, 168)';
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.offset.x + this.player.x - 18, this.offset.y + this.player.y + 18, radius, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.offset.x + this.player.x - 18, this.offset.y + this.player.y + 18, radius + 2, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+                }
             }
 
             this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -331,6 +343,18 @@ class Game {
         let delta = nextms - this.framems;
         this.framems = nextms;
 
+        this.framehistory.splice(10);
+        this.framehistory.unshift(delta);
+
+        var x = 0;
+        for(let i = 0; i < this.framehistory.length; i++) {
+            x += this.framehistory[i];
+        }
+        if (x > 0) {
+            console.log(1000 / (x / 10));
+        }
+
+
         // Gut check - absorb random lag spike / frame jumps
         // (The expected delta is 1000/60 = ~16.67ms.)
         if (delta > 500) {
@@ -346,12 +370,6 @@ class Game {
     start() {
         this.openMenu(this.startMenu);
         window.requestAnimationFrame(this.frame.bind(this));
-    }
-
-    loadAsset(src) {
-        const img = new Image(8, 5);
-        img.src = src;
-        return img;
     }
 
     openMenu(menu) {
@@ -392,6 +410,11 @@ class Game {
             this.menu.select();
         } else if (this.player.dead) {
             this.pendingLevelIndex = this.levelIndex;
+        } else {
+            let activeTerminal = this.activeTerminal;
+            if (activeTerminal) {
+                activeTerminal.toggle();
+            }
         }
     }
 
@@ -451,11 +474,38 @@ class Game {
 
         this.enemies = [];
         this.level.enemies.forEach(enemyData => {
-            let enemy = new Enemy();
-            enemy.x = enemyData.x;
-            enemy.y = enemyData.y;
+            let enemy = new Enemy(enemyData);
             this.enemies.push(enemy);
         });
+
+        this.cameras = [];
+        this.level.cameras.forEach(cameraData => {
+            let camera = new Camera(cameraData);
+            this.cameras.push(camera);
+        });
+
+        this.terminals = [];
+        this.level.terminals.forEach(terminalData => {
+            let terminal = new Terminal(terminalData);
+            terminal.cameras = this.cameras.filter(camera => camera.control === terminal.control);
+            this.terminals.push(terminal);
+        });
+
+        // Pre-render static level
+        this.tileCanvas.width = this.level.width * 32;
+        this.tileCanvas.height = this.level.height * 32;
+        this.tileCtx.fillStyle = 'black';
+        this.tileCtx.fillRect(0, 0, this.level.width * 32, this.level.height * 32);
+        for (let i = 0; i < this.level.height; i++) {
+            for(let j = 0; j < this.level.width; j++) {
+                var tile = Util.tileAtUV(j, i);
+                if (tile === 1) {
+                    this.tileCtx.drawImage(Asset.tile.wall, j * 32, i * 32);
+                } else if (tile === 2) {
+                    this.tileCtx.drawImage(Asset.tile.floor, j * 32, i * 32);
+                }
+            }
+        }
 
         console.log("loaded " + this.levelIndex);
         this.renderPrep = false;
@@ -569,21 +619,35 @@ class Game {
         }
     }
 
-    calculateVisibility(origin, facing, coneAngle) {
+    calculateVisibility(origin, facing, coneAngle, offset, backwalk) {
         let edges = this.losEdges;
         let startAngle = dw(facing - coneAngle / 2);
         let endAngle = dw(facing + coneAngle / 2);
 
-        // This "fudge factor" moves the LOS origin slightly behind the player.
-        /*origin = {
-            x: origin.x - Math.cos(r2d(facing)) * 2,
-            y: origin.y - Math.sin(r2d(facing)) * 2
-        };*/
+        if (endAngle < startAngle) endAngle += 360;
+
+        // How much space between origin and ray start -- the larger the offset,
+        // the less "sharp" the origin point is.
+        offset = offset || 0;
+
+        // Backwalk - how many pixels to walk "backwards" before casting rays.
+        // Often a large offset needs a large backwalk.
+        backwalk = backwalk || 0;
+
+        origin = {
+            x: origin.x - Math.cos(Util.d2r(facing)) * backwalk,
+            y: origin.y - Math.sin(Util.d2r(facing)) * backwalk
+        };
+
+        let sweep = 0.8;
 
         let angles = [startAngle, endAngle];
-        for (var i = 0; i < edges.length; i++) {
+
+        // This approach  blah
+
+        /*for (var i = 0; i < edges.length; i++) {
             var edge = edges[i];
-            var angle = r2d(Math.atan2(edge.p1.y - origin.y, edge.p1.x - origin.x));
+            var angle = Util.r2d(Math.atan2(edge.p1.y - origin.y, edge.p1.x - origin.x));
             if (Util.angleWithin(angle, startAngle, endAngle)) {
                 angles.push(angle);
                 if (angle - 2 >= startAngle) {
@@ -593,7 +657,7 @@ class Game {
                     angles.push(angle + 2);
                 }
             }
-        }
+        }*/
 
         if (this.input.keys[71]) console.log([startAngle, endAngle]);
         if (this.input.keys[71]) console.log(angles);
@@ -609,33 +673,46 @@ class Game {
         var lastp;
         var lastAngle = undefined;
 
-        for(i = 0; i < angles.length; i++) {
-            if (angles[i] === lastAngle) continue;
-            lastAngle = angles[i];
+        // Shadows actually seem a little unnatural if they are super crisp. Introduce
+        // just enough jitter that the user won't see a sharp unmoving line for more
+        // than ~1sec.
+        let jitter = (game.framems % 1000) / 1000;
+
+        let angle = startAngle + jitter;
+        while (angle < endAngle) {
+        //for(i = 0; i < angles.length; i++) {
+         //   angle = angles[i];
+
+//            if (angles[i] === lastAngle) continue;
+  //          lastAngle = angles[i];
+
+            let source = {
+                x: origin.x + Math.cos(Util.d2r(angle)) * offset,
+                y: origin.y + Math.sin(Util.d2r(angle)) * offset
+            };
 
             let ray = {
-                x: origin.x + Math.cos(d2r(angles[i])) * 1000,
-                y: origin.y + Math.sin(d2r(angles[i])) * 1000
-            }
+                x: origin.x + Math.cos(Util.d2r(angle)) * 1000,
+                y: origin.y + Math.sin(Util.d2r(angle)) * 1000
+            };
 
             for (let j = 0; j < edges.length; j++) {
-                let inter = this.intersection({ p1: origin, p2: ray }, edges[j]);
+                let inter = this.intersection({ p1: source, p2: ray }, edges[j]);
                 if (inter) {
                     ray = inter;
-                    line(this.ctx, 'green', { x: inter.x - 6, y: inter.y - 6 }, { x: inter.x + 6, y: inter.y + 6 }, true);
-                    line(this.ctx, 'green', { x: inter.x - 6, y: inter.y + 6 }, { x: inter.x + 6, y: inter.y - 6 }, true);
                 }
             }
 
-            line(this.ctx, 'blue', origin, ray, true);
-
             if (lastp) {
-                triangles.push([origin, lastp, ray]);
+                triangles.push([source, lastp, ray]);
             }
 
             lastp = ray;
+
+            angle += sweep;
         }
 
+/*
         triangles.forEach((triangle, idx) => {
             this.ctx.save();
             this.ctx.globalAlpha = 0.3;
@@ -651,35 +728,7 @@ class Game {
             this.ctx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
             this.ctx.restore();
         });
-
-                if (this.input.keys[71]) {
-                    this.input.keys[71] = undefined;
-                    console.log(angles);
-                    console.log(angles.sort());
-                    console.log(triangles);
-                }
-
-        /*
-        for (var i = 0; i < coneAngle; i++) {
-            let angle = startAngle + i;
-
-            let ray = {
-                x: origin.x + Math.cos(d2r(angle)) * 150,
-                y: origin.y + Math.sin(d2r(angle)) * 150
-            };
-
-            for (let j = 0; j < edges.length; j++) {
-                let inter = this.intersection({ p1: origin, p2: ray }, edges[j]);
-                if (inter) {
-                    ray = inter;
-                    line(this.ctx, 'green', { x: inter.x - 2, y: inter.y - 2 }, { x: inter.x + 2, y: inter.y + 2 }, true);
-                    line(this.ctx, 'green', { x: inter.x - 2, y: inter.y + 2 }, { x: inter.x + 2, y: inter.y - 2 }, true);
-                }
-            }
-
-            line(this.ctx, 'blue', origin, ray, true);
-        }*/
-
+*/
         return triangles;
     }
 

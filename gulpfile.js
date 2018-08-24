@@ -7,6 +7,7 @@ const concat = require("gulp-concat");
 const del = require("del");
 const add = require("gulp-add");
 const uglify = require('gulp-uglify');
+const imagemin = require('gulp-imagemin');
 
 const levelPacker = require("./level-packer");
 
@@ -26,6 +27,7 @@ gulp.task('build:css', () => {
 
 gulp.task('build:assets', () => {
     gulp.src(['src/assets/*.png', '!src/assets/meta_*.png'])
+        //.pipe(imagemin())
         .pipe(gulp.dest('dist/assets'));
 });
 

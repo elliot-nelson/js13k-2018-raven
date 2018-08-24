@@ -1,7 +1,7 @@
 class Enemy {
-    constructor(initialX, initialY) {
-        this.x = initialX;
-        this.y = initialY;
+    constructor(enemyData) {
+        this.x = enemyData.x;
+        this.y = enemyData.y;
         this.vx = 0;
         this.vy = 0;
         this.ax = 10;
@@ -78,5 +78,9 @@ class Enemy {
         } else {
             // The enemy is dead?
         }
+    }
+
+    render() {
+        game.ctx.drawImage(Asset.img.enemy, game.offset.x + this.x, game.offset.y + this.y);
     }
 }

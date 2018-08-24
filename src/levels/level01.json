@@ -50,6 +50,48 @@
                  "width":0,
                  "x":2305,
                  "y":1088
+                }, 
+                {
+                 "height":0,
+                 "id":7,
+                 "name":"",
+                 "point":true,
+                 "properties":
+                    {
+                     "Control":"A",
+                     "Facing":"45"
+                    },
+                 "propertytypes":
+                    {
+                     "Control":"string",
+                     "Facing":"string"
+                    },
+                 "rotation":0,
+                 "type":"camera",
+                 "visible":true,
+                 "width":0,
+                 "x":1872,
+                 "y":1264
+                }, 
+                {
+                 "height":0,
+                 "id":8,
+                 "name":"",
+                 "point":true,
+                 "properties":
+                    {
+                     "Control":"A"
+                    },
+                 "propertytypes":
+                    {
+                     "Control":"string"
+                    },
+                 "rotation":0,
+                 "type":"terminal",
+                 "visible":true,
+                 "width":0,
+                 "x":1937,
+                 "y":1355
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -57,7 +99,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":7,
+ "nextobjectid":10,
  "orientation":"orthogonal",
  "properties":
     {
@@ -73,7 +115,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"levels\/offline.tsx"
+         "source":"offline.tsx"
         }],
  "tilewidth":32,
  "type":"map",

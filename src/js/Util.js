@@ -1,8 +1,24 @@
 const Util = {
+    //
+    // Angles
+    //
+
+    r2d(r) {
+        return Math.floor(r * 3600 / Math.PI / 2) / 10;
+    },
+
+    d2r(d) {
+        return d * Math.PI * 2 / 360;
+    },
+
     // Return true if given angle is "between" (clockwise) two other angles
     angleWithin(angle, b1, b2) {
         return dw(angle - b1) < dw(b2 - b1);
     },
+
+    //
+    // Points
+    //
 
     pointNearPoint(p1, p2, range) {
         return (distance(p1, p2) <= range);
@@ -19,35 +35,41 @@ const Util = {
         return 0 <= a && a <= 1 && 0 <= b && b <= 1 && 0 <= c && c <= 1;
     },
 
-    pixelInWall(x, y) {
-        return Util.tileInWall(Math.floor(x / 32), Math.floor(y / 32));
+    //
+    // Map-related
+    //
+
+    tileAtUV(u, v) {
+        return game.level.data[v * game.level.width + u];
     },
 
-    tileInWall(u, v) {
-        return game.level.data[v * game.level.width + u] !== 2;
+    tileAtXY(x, y) {
+        return Util.tileAtUV(Math.floor(x / 32), Math.floor(y / 32));
     },
 
-    pixelInFloor(x, y) {
-        var u = Math.floor(x / 32);
-        var v = Math.floor(y / 32);
-        return game.level.data[v * game.level.width + u] !== 2;
+    wallAtUV(u, v) {
+        return Util.tileAtUV(u, v) !== 2;
+    },
+
+    wallAtXY(x, y) {
+        return Util.wallAtUV(Math.floor(x / 32), Math.floor(y / 32));
     },
 
     boundEntityWall(entity) {
-        if (Util.pixelInWall(entity.x - entity.width / 2, entity.y)) {
+        if (Util.wallAtXY(entity.x - entity.width / 2, entity.y)) {
             entity.x += 32 - ((entity.x - entity.width / 2) % 32);
         }
 
-        if (Util.pixelInWall(entity.x + entity.width / 2, entity.y)) {
+        if (Util.wallAtXY(entity.x + entity.width / 2, entity.y)) {
             entity.x -= ((entity.x + entity.width / 2) % 32);
         }
 
-        if (Util.pixelInWall(entity.x, entity.y - entity.height / 2)) {
+        if (Util.wallAtXY(entity.x, entity.y - entity.height / 2)) {
             entity.y += 32 - ((entity.y - entity.height / 2) % 32);
         }
 
-        if (Util.pixelInWall(entity.x, entity.y + entity.height / 2)) {
+        if (Util.wallAtXY(entity.x, entity.y + entity.height / 2)) {
             entity.y -= ((entity.y + entity.height / 2) % 32);
         }
     }
-};
+}
