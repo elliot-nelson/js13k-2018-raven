@@ -103,7 +103,7 @@ class Enemy {
             // calms down (that is, becomes less conspicuous) over a couple seconds.
             // However, even after a long period, there should be a slight shakiness
             // to the statue.
-            if (jitter < 450) {
+            if (jitter < 300) {
                 [r1, r2, r3, r4, a1, a2] = [
                     Math.floor(Math.random() * 11) - 5,
                     Math.floor(Math.random() * 11) - 5,
@@ -112,7 +112,7 @@ class Enemy {
                     0.4,
                     0.7
                 ];
-            } else if (jitter < 900) {
+            } else if (jitter < 600) {
                 [r1, r2, r3, r4, a1, a2] = [
                     Math.floor(Math.random() * 7) - 3,
                     Math.floor(Math.random() * 7) - 3,
@@ -123,12 +123,12 @@ class Enemy {
                 ];
             } else {
                 [r1, r2, r3, r4, a1, a2] = [
-                    Math.floor(Math.random() * 3) - 1,
-                    Math.floor(Math.random() * 3) - 1,
+                    Math.floor(Math.random() * 5) - 2,
+                    Math.floor(Math.random() * 5) - 2,
                     Math.floor(Math.random() * 3) - 1,
                     Math.floor(Math.random() * 3) - 1,
                     0.1,
-                    0.1
+                    0.2
                 ];
             }
 

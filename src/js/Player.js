@@ -63,6 +63,11 @@ class Player {
 
         this.x += this.vx * delta;
         this.y += this.vy * delta;
+
+        if (!game.lockCrosshairToMap) {
+            game.crosshair.x += this.vx * delta;
+            game.crosshair.y += this.vy * delta;
+        }
     }
 
     render() {

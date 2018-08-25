@@ -61,6 +61,8 @@ class Game {
         this.crosshair = { x: 0, y: 0 };
         this.mouse = { x: 0, y: 0 };
 
+        this.lockCrosshairToMap = false;
+
         // Yes, technically, facing and fov are properties of the player. But because
         // we treat the crosshair as a separate entity, it's easier to just make it
         // part of game state.
@@ -260,9 +262,9 @@ class Game {
             this.ctx.restore();*/
 
             // los edges
-            this.losEdges.forEach(edge => {
+            /*this.losEdges.forEach(edge => {
                 this.ctx.save();
-                this.ctx.globalAlpha = 0.5;
+                this.ctx.globalAlpha = 1;
                 this.ctx.strokeStyle = 'yellow';
                 this.ctx.setLineDash([4, 2]);
                 this.ctx.beginPath();
@@ -270,7 +272,7 @@ class Game {
                 this.ctx.lineTo(this.offset.x + edge.p2.x, this.offset.y + edge.p2.y);
                 this.ctx.stroke();
                 this.ctx.restore();
-            });
+            });*/
 
             if (this.player.dead) {
                 this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -490,7 +492,9 @@ class Game {
             this.terminals.push(terminal);
         });
 
-        // Pre-render static level
+        // Pre-render static level. Rendering the entire tiled map ahead of time
+        // saves us hundreds-thousands of drawImage calls per frame, which according
+        // to Chrome perf is the biggest CPU hit in this game.
         this.tileCanvas.width = this.level.width * 32;
         this.tileCanvas.height = this.level.height * 32;
         this.tileCtx.fillStyle = 'black';
@@ -501,7 +505,16 @@ class Game {
                 if (tile === 1) {
                     this.tileCtx.drawImage(Asset.tile.wall, j * 32, i * 32);
                 } else if (tile === 2) {
-                    this.tileCtx.drawImage(Asset.tile.floor, j * 32, i * 32);
+                    // Rotate floor pieces in a predictable pattern.
+                    let rot = ((i * 3 + j * 7) % 4) * 90;
+
+                    this.tileCtx.save();
+                    // Totally cheating... mute the floor a little bit.
+                    this.tileCtx.globalAlpha = 0.82;
+                    this.tileCtx.translate(j * 32 + 16, i * 32 + 16);
+                    this.tileCtx.rotate(Util.d2r(rot));
+                    this.tileCtx.drawImage(Asset.tile.floor, -16, -16);
+                    this.tileCtx.restore();
                 }
             }
         }
@@ -515,10 +528,6 @@ class Game {
     // Given a tiled level, precalculate a set of wall-floor "edges". More generally,
     // an "edge" is a straight line that divides a non-vision-blocking area from a
     // vision-blocking area.
-    //
-    // Approach: loop through every single tile, looking for "floors" (non-vision-blocking
-    // areas). For every floor tile, check all 4 directions for walls - any wall
-    // is added as an edge.
     polygonize(level) {
         var edges = {};
         var addedge = (x1,y1,x2,y2,type) => {
@@ -533,6 +542,8 @@ class Game {
             }
         };
 
+        // Loop through all floor tiles, checking for adjacent wall tiles, and
+        // create or extend an LOS edge whenever we find one.
         for (var i = 0; i < level.height; i++) {
             for(var j = 0; j < level.width; j++) {
                 var value = level.data[i * level.width + j];
@@ -559,22 +570,51 @@ class Game {
             }
         }
 
-        /*Object.keys(edges).forEach(junct => {
-            if (edges[junct].length === 2) {
-                var a = edges[junct][0];
-                var b = edges[junct][1];
-                if (a[0] === b[2] && a[1] === b[3]) {
-                    edges[junct] = [b[0],
-                if (a.type === b.type) {
-                    if (a[0] ===
-                }
-            }
-        });*/
+        // More brute force (there should be something more elegant, surely?). We don't
+        // always want our visibility to end _right_ at the edge of a tile, perhaps we'd
+        // like to cut into the tile; but our simplistic algorithm above doesn't distinguish
+        // between concave and convex corners. So we make up a bit of the legwork here.
+        this.losEdges = Object.keys(edges).map(k => {
+            let ax = 0, bx = 0, ay = 0, by = 0;
+            let cut = 4;
 
-        // let's print em
-        console.log(edges);
-        this.losEdges = Object.keys(edges).map(k => ({ p1: { x: edges[k][0], y: edges[k][1] }, p2: { x: edges[k][2], y: edges[k][3] } }));
-        console.log(this.losEdges);
+            if (k.endsWith('left')) {
+                ax = bx = -cut;
+                ay = -cut;
+                by = cut;
+                if (!Util.wallAtXY(edges[k][0] + ax, edges[k][1] + ay)) ay = -ay;
+                if (!Util.wallAtXY(edges[k][2] + bx, edges[k][3] + by)) by = -by;
+            } else if (k.endsWith('right')) {
+                ax = bx = cut;
+                ay = -cut;
+                by = cut;
+                if (!Util.wallAtXY(edges[k][0] + ax, edges[k][1] + ay)) ay = -ay;
+                if (!Util.wallAtXY(edges[k][2] + bx, edges[k][3] + by)) by = -by;
+            } else if (k.endsWith('top')) {
+                ay = by = -cut;
+                ax = -cut;
+                bx = cut;
+                if (!Util.wallAtXY(edges[k][0] + ax, edges[k][1] + ay)) ax = -ax;
+                if (!Util.wallAtXY(edges[k][2] + bx, edges[k][3] + by)) bx = -bx;
+            } else if (k.endsWith('bottom')) {
+                ay = by = cut;
+                ax = -cut;
+                bx = cut;
+                if (!Util.wallAtXY(edges[k][0] + ax, edges[k][1] + ay)) ax = -ax;
+                if (!Util.wallAtXY(edges[k][2] + bx, edges[k][3] + by)) bx = -bx;
+            }
+
+            return {
+                p1: {
+                    x: edges[k][0] + ax,
+                    y: edges[k][1] + ay
+                },
+                p2: {
+                    x: edges[k][2] + bx,
+                    y: edges[k][3] + by
+                }
+            };
+        });
     }
 
     pointInBounds(p, bounds) {
@@ -743,7 +783,7 @@ class Game {
             var priorCost = routes[v * this.level.width + u];
 
             if (this.pointInFriendlySight({ x: u * 32 + 16, y: v * 32 + 16})) {
-                c += 50;
+                c += 100;
             } else {
                 c += 2;
             }
