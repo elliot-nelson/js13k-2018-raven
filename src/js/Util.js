@@ -24,8 +24,8 @@ const Util = {
         return (distance(p1, p2) <= range);
     },
 
-    // Return true if point is inside given triangle.
-    // This is the barycentric coordinate check.
+    // Return true if point is inside given triangle. This particular version
+    // is an implementation of the barycentric coordinate check.
     pointInTriangle(p, t1, t2, t3) {
         var d = (t2.y - t3.y) * (t1.x - t3.x) + (t3.x - t2.x) * (t1.y - t3.y);
         var a = ((t2.y - t3.y) * (p.x - t3.x) + (t3.x - t2.x) * (p.y - t3.y)) / d;
@@ -33,6 +33,37 @@ const Util = {
         var c = 1 - a - b;
 
         return 0 <= a && a <= 1 && 0 <= b && b <= 1 && 0 <= c && c <= 1;
+    },
+
+    entitySpotted(entity) {
+        // 5-point check
+        let offsets = [
+            [0, 0],
+            [-entity.width / 2, -entity.height / 2],
+            [entity.width / 2, -entity.height / 2],
+            [-entity.width / 2, entity.height / 2],
+            [entity.width / 2, entity.height / 2]
+        ];
+
+        for (let i = 0; i < offsets.length; i++) {
+            let ptr = Math.floor(entity.y + game.offset.y + offsets[i][1]) * game.canvas.width +
+                      Math.floor(entity.x + game.offset.x + offsets[i][0]);
+            // If the green channel in the los canvas is non-zero, this entity is
+            // visible to the player. (Technically any channel will do, but alpha
+            // is not reliable and red is used during death animations, so we'll go
+            // with green).
+            if (game.losData.data[ptr * 4 + 1] > 0) {
+                return true;
+            }
+        }
+
+        return false;
+
+        /*for(let i = 0; i < game.friendlySight.length; i++) {
+            if (Util.pointInTriangle(entity, ...game.friendlySight[i])) {
+                return true;
+            }
+        }*/
     },
 
     //

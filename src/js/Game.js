@@ -55,6 +55,7 @@ class Game {
         this.framems = 0;
         this.player = undefined;
         this.enemies = [];
+        this.particles = [];
         this.framehistory = [];
 
         this.crosshair = { x: 0, y: 0 };
@@ -157,17 +158,37 @@ class Game {
             this.facing = r2d(Math.atan2(this.crosshair.y - this.player.y, this.crosshair.x - this.player.x));
 
             this.friendlySight = [];
-            this.friendlySight = this.friendlySight.concat(this.calculateVisibility(this.player, this.facing, this.fov, 4, 5));
+            if (!this.player.dead) {
+                this.friendlySight = this.friendlySight.concat(this.calculateVisibility(this.player, this.facing, this.fov, 4, 5));
+            }
             this.cameras.forEach(camera => {
                 if (camera.enabled) {
                     this.friendlySight = this.friendlySight.concat(this.calculateVisibility(camera, camera.facing, camera.fov, 12, 0));
                 }
             });
 
+            // Next, we "render" the LOS canvas, which is actually part of updating.
+            this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.friendlySight.forEach((triangle, idx) => {
+                this.losCtx.fillStyle = 'white';
+                this.losCtx.beginPath();
+                this.losCtx.moveTo(this.offset.x + triangle[0].x, this.offset.y + triangle[0].y);
+                this.losCtx.lineTo(this.offset.x + triangle[1].x, this.offset.y + triangle[1].y);
+                this.losCtx.lineTo(this.offset.x + triangle[2].x, this.offset.y + triangle[2].y);
+                this.losCtx.closePath();
+                this.losCtx.fill();
+            });
+            this.losData = this.losCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+
             this.updatePathRoutes();
 
             this.enemies.forEach(enemy => enemy.update(delta));
             this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
+
+            this.particles.forEach(particle => particle.update(delta));
+            this.particles = this.particles.filter(particle => particle.state !== 'dead');
 
             if (!this.player.dead) {
                 this.enemies.forEach(enemy => {
@@ -223,6 +244,7 @@ class Game {
             this.cameras.forEach(camera => camera.render());
             this.player.render();
             this.enemies.forEach(enemy => enemy.render());
+            this.particles.forEach(particle => particle.render());
 
             // Light cone
             /*var cone1 = xyd(this.player, dw(this.facing - 30), 50);
@@ -250,40 +272,11 @@ class Game {
                 this.ctx.restore();
             });
 
-            this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
             if (this.player.dead) {
+                this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 let opacity = Math.max(0, 0.8 - this.deathFrame / 40);
                 this.losCtx.fillStyle = 'rgba(0, 0, 0, ' + opacity + ')';
                 this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            } else {
-                this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-                this.friendlySight.forEach((triangle, idx) => {
-                    this.losCtx.fillStyle = 'white';
-                    this.losCtx.beginPath();
-                    this.losCtx.moveTo(this.offset.x + triangle[0].x, this.offset.y + triangle[0].y);
-                    this.losCtx.lineTo(this.offset.x + triangle[1].x, this.offset.y + triangle[1].y);
-                    this.losCtx.lineTo(this.offset.x + triangle[2].x, this.offset.y + triangle[2].y);
-                    this.losCtx.closePath();
-                    this.losCtx.fill();
-                    //this.losCtx.font = '20px serif';
-                    //this.losCtx.fillStyle = 'white';
-                    //this.losCtx.fillText(idx, this.offset.x + triangle[1].x, this.offset.y + triangle[1].y + 15);
-                });
-
-                /*this.losCtx.save();
-                var px = this.offset.x + this.player.x;
-                var py = this.offset.y + this.player.y;
-                var gradient = this.losCtx.createRadialGradient(px, py, 1, px, py, 32+16);
-                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-                gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.2)');
-                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                this.losCtx.arc(px, py, 32+16, 0, 2 * Math.PI);
-                this.losCtx.fillStyle = gradient;
-                this.losCtx.fill();
-                this.losCtx.restore();*/
             }
 
             // Blit visibility
@@ -310,6 +303,12 @@ class Game {
                 }
             }
 
+            // Post-visibility rendering
+            this.enemies.forEach(enemy => enemy.renderPost());
+
+            // Reset all global transforms. Note: do not render anything except "HUD UI"
+            // after this point, as it won't line up with the rest of the map in case of,
+            // e.g., the death spin animation.
             this.ctx.setTransform(1, 0, 0, 1, 0, 0);
 
             if (this.player.dead) {
@@ -351,7 +350,7 @@ class Game {
             x += this.framehistory[i];
         }
         if (x > 0) {
-            console.log(1000 / (x / 10));
+            //console.log(1000 / (x / 10));
         }
 
 
