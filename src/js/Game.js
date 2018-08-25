@@ -61,6 +61,15 @@ class Game {
         this.crosshair = { x: 0, y: 0 };
         this.mouse = { x: 0, y: 0 };
 
+        // How "deep" a player's vision cone cuts into a wall tile. Very important
+        // that this be a global respected value, without it, the corners we are cutting
+        // will result in e.g. light shining through the corners of moving doors.
+        this.tileVisibilityInset = 4;
+
+        // When "lock crosshair to map" is true, leaving mouse at rest and moving
+        // with WASD will "strafe" (for example, moving around a raven in a circle
+        // stay looking at the raven). The default is false, which means leaving the
+        // mouse at rest will keep the player's orientation steady as you move.
         this.lockCrosshairToMap = false;
 
         // Yes, technically, facing and fov are properties of the player. But because
@@ -130,6 +139,7 @@ class Game {
 
             this.terminals.forEach(terminal => terminal.update(delta));
             this.cameras.forEach(camera => camera.update(delta));
+            this.doors.forEach(door => door.update(delta));
 
             this.offset = {
                 x: this.canvas.width / 2 - this.player.x,
@@ -246,6 +256,7 @@ class Game {
             this.cameras.forEach(camera => camera.render());
             this.player.render();
             this.enemies.forEach(enemy => enemy.render());
+            this.doors.forEach(door => door.render());
             this.particles.forEach(particle => particle.render());
 
             // Light cone
@@ -262,9 +273,11 @@ class Game {
             this.ctx.restore();*/
 
             // los edges
-            /*this.losEdges.forEach(edge => {
+            let losEdges = this.losEdges;
+            this.doors.forEach(door => losEdges = losEdges.concat(door.getLosEdges()));
+            losEdges.forEach(edge => {
                 this.ctx.save();
-                this.ctx.globalAlpha = 1;
+                this.ctx.globalAlpha = 0.9;
                 this.ctx.strokeStyle = 'yellow';
                 this.ctx.setLineDash([4, 2]);
                 this.ctx.beginPath();
@@ -272,7 +285,7 @@ class Game {
                 this.ctx.lineTo(this.offset.x + edge.p2.x, this.offset.y + edge.p2.y);
                 this.ctx.stroke();
                 this.ctx.restore();
-            });*/
+            });
 
             if (this.player.dead) {
                 this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -492,6 +505,12 @@ class Game {
             this.terminals.push(terminal);
         });
 
+        this.doors = [];
+        this.level.doors.forEach(doorData => {
+            let door = new Door(doorData);
+            this.doors.push(door);
+        });
+
         // Pre-render static level. Rendering the entire tiled map ahead of time
         // saves us hundreds-thousands of drawImage calls per frame, which according
         // to Chrome perf is the biggest CPU hit in this game.
@@ -528,6 +547,8 @@ class Game {
     // Given a tiled level, precalculate a set of wall-floor "edges". More generally,
     // an "edge" is a straight line that divides a non-vision-blocking area from a
     // vision-blocking area.
+    //
+    // (Doors are dynamic and are not included in this phase.)
     polygonize(level) {
         var edges = {};
         var addedge = (x1,y1,x2,y2,type) => {
@@ -576,7 +597,7 @@ class Game {
         // between concave and convex corners. So we make up a bit of the legwork here.
         this.losEdges = Object.keys(edges).map(k => {
             let ax = 0, bx = 0, ay = 0, by = 0;
-            let cut = 4;
+            let cut = this.tileVisibilityInset;
 
             if (k.endsWith('left')) {
                 ax = bx = -cut;
@@ -659,7 +680,13 @@ class Game {
     }
 
     calculateVisibility(origin, facing, coneAngle, offset, backwalk) {
+        // Get pre-calculated visibility edges
         let edges = this.losEdges;
+
+        // Add in dynamic visibility edges
+        this.doors.forEach(door => edges = edges.concat(door.getLosEdges()));
+        console.log(this.doors[0].getLosEdges());
+
         let startAngle = dw(facing - coneAngle / 2);
         let endAngle = dw(facing + coneAngle / 2);
 

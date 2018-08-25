@@ -1,5 +1,16 @@
 const glob = require("glob");
 
+// Additional metadata to merge into each level.
+const LevelMetadata = {
+    level00: {
+        name: 'Annex 01A',
+        hint: 'Look around with the mouse. Move with WASD.'
+    },
+    level01: {
+        name: 'Badofjfoeof'
+    }
+};
+
 /**
  * The level packer takes JSON levels, exported by Tiled, and converts them into
  * our game-specific level format. I suppose this insulates the game code a little
@@ -59,14 +70,16 @@ const levelPacker = {
         objectsLayer = levelPacker.cropLayer(objectsLayer, tileBounds.left, tileBounds.top, width, height);
 
         const level = {
-            name: raw.properties.LevelName,
             enemies: [],
             cameras: [],
             terminals: [],
+            doors: [],
             width: width,
             height: height,
             data: terrainLayer.data
         };
+        let short = filename.match(/\/([^/]*)\.json/)[1];
+        Object.assign(level, LevelMetadata[short]);
 
         const enterBounds = {
             top: terrainLayer.height * 32,
@@ -119,6 +132,20 @@ const levelPacker = {
                     exitBounds.bottom = Math.max(exitBounds.bottom, i * 32 + 32);
                     exitBounds.left = Math.min(exitBounds.left, j * 32);
                     exitBounds.right = Math.max(exitBounds.right, j * 32 + 32);
+                } else if (metaLayer.data[i * width + j] === 7) {
+                    if (metaLayer.data[i * width + j + 1] === 7) {
+                        level.doors.push({
+                            u: j,
+                            v: i,
+                            type: 'h'
+                        });
+                    } else if (metaLayer.data[(i + 1) * width + j] === 7) {
+                        level.doors.push({
+                            u: j,
+                            v: i,
+                            type: 'v'
+                        });
+                    }
                 }
             }
         }

@@ -19,5 +19,6 @@ const Asset = {
         Asset.img.terminal    = Asset.loadImage('assets/terminal.png');
         Asset.tile.floor      = Asset.loadImage('assets/floor.png');
         Asset.tile.wall       = Asset.loadImage('assets/wall.png');
+        Asset.tile.door       = Asset.loadImage('assets/door.png');
     }
 };

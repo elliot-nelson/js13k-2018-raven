@@ -4,12 +4,10 @@ class Player {
         this.y = 40;
         this.vx = 0;
         this.vy = 0;
-        this.ax = 10;
-        this.ay = 10;
         this.facing = 0;
 
-        this.accel = 200;     // per second
-        this.decel = 160;     // per second
+        this.accel = 400;     // per second
+        this.decel = 400;     // per second
         this.maxSpeed = 100;   // per second
 
         this.width = 8;

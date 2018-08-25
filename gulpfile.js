@@ -8,6 +8,8 @@ const del = require("del");
 const add = require("gulp-add");
 const uglify = require('gulp-uglify');
 const imagemin = require('gulp-imagemin');
+const cleancss = require('gulp-clean-css');
+const htmlmin = require('gulp-htmlmin');
 
 const levelPacker = require("./level-packer");
 
@@ -17,17 +19,19 @@ gulp.task('clean', () => {
 
 gulp.task('build:html', () => {
     gulp.src('src/*.html')
+        .pipe(htmlmin())
         .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build:css', () => {
     gulp.src('src/css/*.css')
+        .pipe(cleancss())
         .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build:assets', () => {
     gulp.src(['src/assets/*.png', '!src/assets/meta_*.png'])
-        //.pipe(imagemin())
+        .pipe(imagemin())
         .pipe(gulp.dest('dist/assets'));
 });
 
@@ -38,8 +42,8 @@ gulp.task('build:js', () => {
         .pipe(concat('app.js'))
         .pipe(babel())
         .pipe(size())
-        //.pipe(uglify())
-        //.pipe(size())
+        .pipe(uglify({ toplevel: true }))
+        .pipe(size())
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));
 });
