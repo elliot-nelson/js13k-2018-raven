@@ -1,15 +1,5 @@
-const glob = require("glob");
-
-// Additional metadata to merge into each level.
-const LevelMetadata = {
-    level00: {
-        name: 'Annex 01A',
-        hint: 'Look around with the mouse. Move with WASD.'
-    },
-    level01: {
-        name: 'Badofjfoeof'
-    }
-};
+const glob = require('glob');
+const LevelMetadata = require('./level-metadata');
 
 /**
  * The level packer takes JSON levels, exported by Tiled, and converts them into

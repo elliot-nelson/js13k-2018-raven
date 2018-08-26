@@ -33,6 +33,9 @@ class Input {
         // Raw key code state
         this.keys = [];
 
+        // Input queue (used only for cheat codes)
+        this.queue = [];
+
         // Map keys to in-game inputs
         this.map = [];
         this.map[87] = 'up';       // W
@@ -89,6 +92,9 @@ class Input {
             var k = this.map[event.keyCode];
 
             this.keys[event.keyCode] = undefined;
+
+            this.queue.unshift(event.key);
+            this.queue.splice(10);
 
             if (k) {
                 this[k] = undefined;

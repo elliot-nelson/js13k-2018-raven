@@ -1,19 +1,3 @@
-
-function line(ctx, color, p1, p2, offset) {
-    var dx = 0, dy = 0;
-    if (offset) {
-        dx = line.offsetX;
-        dy = line.offsetY;
-    }
-    ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.moveTo(p1.x + dx, p1.y + dy);
-    ctx.lineTo(p2.x + dx, p2.y + dy);
-    ctx.stroke();
-    ctx.restore();
-}
-
 class Game {
     init() {
         // Prep canvas
@@ -52,8 +36,11 @@ class Game {
             }
         }).init();
 
-        this.framems = 0;
+        this.level = undefined;
+        this.intro = undefined;
         this.player = undefined;
+
+        this.framems = 0;
         this.enemies = [];
         this.particles = [];
         this.framehistory = [];
@@ -128,7 +115,13 @@ class Game {
         }
 
         if (this.menu) {
-            this.menu.update();
+            this.menu.update(delta);
+        } else if (this.intro) {
+            this.intro.update(delta);
+            if (this.intro.state === 'dead') {
+                this.intro = undefined;
+            }
+            this.levelms = performance.now();
         } else {
             if (this.player.dead) {
                 this.deathFrame++;
@@ -220,13 +213,15 @@ class Game {
 
             this.renderPrep = true;
         }
+
+        this.handleCheatCodes();
     }
 
     render() {
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        if (this.level && this.renderPrep) {
+        if (this.level && this.renderPrep && !this.intro) {
             if (this.player.dead) {
                 let scale = Math.min(3, 1 + this.deathFrame / 50);
                 this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
@@ -306,15 +301,7 @@ class Game {
 
                 // Interactivity indicator
                 if (this.activeTerminal) {
-                    let radius = (this.framems % 1000 < 500 ? 4 : 6);
-                    this.ctx.fillStyle = 'rgba(204, 204, 204, 168)';
-                    this.ctx.strokeStyle = 'rgba(204, 204, 204, 168)';
-                    this.ctx.beginPath();
-                    this.ctx.arc(this.offset.x + this.player.x - 18, this.offset.y + this.player.y + 18, radius, 0, 2 * Math.PI);
-                    this.ctx.fill();
-                    this.ctx.beginPath();
-                    this.ctx.arc(this.offset.x + this.player.x - 18, this.offset.y + this.player.y + 18, radius + 2, 0, 2 * Math.PI);
-                    this.ctx.stroke();
+                    Util.renderTogglePrompt(this.offset.x + this.player.x - 18, this.offset.y + this.player.y + 18);
                 }
             }
 
@@ -352,26 +339,30 @@ class Game {
             }
         }
 
+        if (this.intro && !this.menu) {
+            this.intro.render();
+        }
+
         if (this.menu) {
             this.menu.render();
         }
     }
 
     renderLevelText() {
-        let chars = Math.floor((this.framems - this.levelms) / 33);
+        let chars = Math.floor((this.framems - this.levelms) / 19);
         let nameChars = Math.min(this.level.name.length, chars);
         let hintChars = Math.max(0, chars - nameChars - 3);
 
-        let delayStart = ((this.level.hint.length || 0) + 3 + this.level.name.length) * 33;
+        let delayStart = (this.level.hint.length + 3 + this.level.name.length) * 19;
 
         if (this.framems - this.levelms - delayStart < 3000) {
             this.ctx.font = Asset.getFontString(22);
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+            this.ctx.fillStyle = 'rgba(204, 255, 204, 0.9)';
             this.ctx.fillText(this.level.name.substring(0, nameChars), 18, 36);
 
             if (this.level.hint) {
                 this.ctx.font = Asset.getFontString(18);
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                this.ctx.fillStyle = 'rgba(204, 204, 204, 0.8)';
                 this.ctx.fillText(this.level.hint.substring(0, hintChars), 18, this.canvas.height - 30);
             }
         }
@@ -446,6 +437,8 @@ class Game {
     onToggle() {
         if (this.menu) {
             this.menu.select();
+        } else if (this.intro) {
+            this.intro.toggle();
         } else if (this.player.dead) {
             this.pendingLevelIndex = this.levelIndex;
         } else {
@@ -565,8 +558,13 @@ class Game {
             }
         }
 
+        if (this.level.intro) {
+            this.intro = new Intro(this.level.intro);
+        } else {
+            this.levelms = performance.now();
+        }
+
         this.renderPrep = false;
-        this.levelms = performance.now();
     }
 
     renderTileNoise(seed, x, y) {
@@ -579,7 +577,7 @@ class Game {
         let r,g,b,a;
         for (let i = 1; i < 31; i++) {
             for(let j = 1; j < 31; j++) {
-                if (rand() > 208) {
+                if (rand() > 172) {
                     [r, g, b] = [rand(), rand(), rand()];
                     a = 0.09;
                     this.tileCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
@@ -732,7 +730,6 @@ class Game {
 
         // Add in dynamic visibility edges
         this.doors.forEach(door => edges = edges.concat(door.getLosEdges()));
-        console.log(this.doors[0].getLosEdges());
 
         let startAngle = dw(facing - coneAngle / 2);
         let endAngle = dw(facing + coneAngle / 2);
@@ -825,23 +822,6 @@ class Game {
             angle += sweep;
         }
 
-/*
-        triangles.forEach((triangle, idx) => {
-            this.ctx.save();
-            this.ctx.globalAlpha = 0.3;
-            this.ctx.fillStyle = 'blue';
-            this.ctx.beginPath();
-            this.ctx.moveTo(line.offsetX + triangle[0].x, line.offsetY + triangle[0].y);
-            this.ctx.lineTo(line.offsetX + triangle[1].x, line.offsetY + triangle[1].y);
-            this.ctx.lineTo(line.offsetX + triangle[2].x, line.offsetY + triangle[2].y);
-            this.ctx.closePath();
-            this.ctx.fill();
-            this.ctx.font = '20px serif';
-            this.ctx.fillStyle = 'white';
-            this.ctx.fillText(idx, line.offsetX + triangle[1].x, line.offsetY + triangle[1].y + 15);
-            this.ctx.restore();
-        });
-*/
         return triangles;
     }
 
@@ -889,5 +869,21 @@ class Game {
             }
         }
         return false;
+    }
+
+    handleCheatCodes() {
+        // GOTOnn (nn = 01-99, number of a valid level)
+        if (this.input.queue[0] >= '0' && this.input.queue[0] <= '9' &&
+            this.input.queue[1] >= '0' && this.input.queue[1] <= '9' &&
+            this.input.queue[2] === 'o' &&
+            this.input.queue[3] === 't' &&
+            this.input.queue[4] === 'o' &&
+            this.input.queue[5] === 'g') {
+            this.pendingLevelIndex = parseInt(this.input.queue[1] + this.input.queue[0], 10) - 1;
+            if (this.pendingLevelIndex >= LevelCache.length || this.pendingLevelIndex < 0) {
+                this.pendingLevelIndex = undefined;
+            }
+            this.input.queue = [];
+        }
     }
 };

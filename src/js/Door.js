@@ -12,8 +12,9 @@ class Door {
             this.y = this.v * 32 + 32;
         }
 
-        // 58 is far enough away that the user's "elevator start position"
-        // will trigger the door.
+        // Select a radius just big enough to include our traditional
+        // "elevator start position" (we want the effect of the doors
+        // sliding open as each level starts).
         this.toggleRadius = 58;
 
         this.control = doorData.control;

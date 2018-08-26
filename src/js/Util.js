@@ -111,6 +111,7 @@ const Util = {
         function Mash() {
             var n = 4022871197;
             return function(r) {
+                let f;
                 for(var t, s, u = 0, e = 0.02519603282416938; u < r.length; u++)
                 s = r.charCodeAt(u), f = (e * (n += s) - (n*e|0)),
                 n = 4294967296 * ((t = f * (e*n|0)) - (t|0)) + (t|0);
@@ -126,5 +127,17 @@ const Util = {
                 return c = y - (x = y|0);
             };
         }();
+    },
+
+    renderTogglePrompt(x, y) {
+        let radius = (game.framems % 1000 < 500 ? 4 : 6);
+        game.ctx.fillStyle = 'rgba(204, 204, 204, 168)';
+        game.ctx.strokeStyle = 'rgba(204, 204, 204, 168)';
+        game.ctx.beginPath();
+        game.ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        game.ctx.fill();
+        game.ctx.beginPath();
+        game.ctx.arc(x, y, radius + 2, 0, 2 * Math.PI);
+        game.ctx.stroke();
     }
 }

@@ -1,2 +1,2 @@
 window.game = new Game();
-window.game.init().start();
+game.init().start();
