@@ -542,11 +542,13 @@ class Game {
         this.tileCanvas.height = this.level.height * 32;
         this.tileCtx.fillStyle = 'black';
         this.tileCtx.fillRect(0, 0, this.level.width * 32, this.level.height * 32);
+
         for (let i = 0; i < this.level.height; i++) {
             for(let j = 0; j < this.level.width; j++) {
                 var tile = Util.tileAtUV(j, i);
                 if (tile === 1) {
                     this.tileCtx.drawImage(Asset.tile.wall, j * 32, i * 32);
+                    this.renderTileNoise(1, j * 32, i * 32);
                 } else if (tile === 2) {
                     // Rotate floor pieces in a predictable pattern.
                     let rot = ((i * 3 + j * 7) % 4) * 90;
@@ -558,12 +560,33 @@ class Game {
                     this.tileCtx.rotate(Util.d2r(rot));
                     this.tileCtx.drawImage(Asset.tile.floor, -16, -16);
                     this.tileCtx.restore();
+                    this.renderTileNoise(2, j * 32, i * 32);
                 }
             }
         }
 
         this.renderPrep = false;
         this.levelms = performance.now();
+    }
+
+    renderTileNoise(seed, x, y) {
+        // Adding some noise makes most tiles look much more natural (easier on
+        // the eyes), but it also explodes PNG size by an order of magnitude. Cheat
+        // by saving the PNGs as mostly-solid-color (also allows us to index colors,
+        // saving even more space), and add the noise in when we render the level.
+        let seeded = Util.Alea(seed);
+        let rand = () => Math.floor(seeded() * 256);
+        let r,g,b,a;
+        for (let i = 1; i < 31; i++) {
+            for(let j = 1; j < 31; j++) {
+                if (rand() > 208) {
+                    [r, g, b] = [rand(), rand(), rand()];
+                    a = 0.09;
+                    this.tileCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+                    this.tileCtx.fillRect(x + j, y + i, 1, 1);
+                }
+            }
+        }
     }
 
     // Warning: brute force incoming...
