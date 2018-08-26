@@ -341,15 +341,39 @@ class Game {
 
                 let size = Math.min(80, 20 + this.deathFrame / 5);
                 opacity = Math.min(0.5, this.deathFrame / 50);
-                this.ctx.font = '' + size + 'px serif';
+                this.ctx.font = Asset.getFontString(size);
                 let x = this.canvas.width / 2 - this.ctx.measureText('YOU ARE DEAD').width / 2;
                 this.ctx.fillStyle = 'rgba(255, 255, 255, ' + opacity + ')';
                 this.ctx.fillText('YOU ARE DEAD', x, this.canvas.height / 2);
+            }
+
+            if (!this.menu) {
+                this.renderLevelText();
             }
         }
 
         if (this.menu) {
             this.menu.render();
+        }
+    }
+
+    renderLevelText() {
+        let chars = Math.floor((this.framems - this.levelms) / 33);
+        let nameChars = Math.min(this.level.name.length, chars);
+        let hintChars = Math.max(0, chars - nameChars - 3);
+
+        let delayStart = ((this.level.hint.length || 0) + 3 + this.level.name.length) * 33;
+
+        if (this.framems - this.levelms - delayStart < 3000) {
+            this.ctx.font = Asset.getFontString(22);
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+            this.ctx.fillText(this.level.name.substring(0, nameChars), 18, 36);
+
+            if (this.level.hint) {
+                this.ctx.font = Asset.getFontString(18);
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                this.ctx.fillText(this.level.hint.substring(0, hintChars), 18, this.canvas.height - 30);
+            }
         }
     }
 
@@ -538,8 +562,8 @@ class Game {
             }
         }
 
-        console.log("loaded " + this.levelIndex);
         this.renderPrep = false;
+        this.levelms = performance.now();
     }
 
     // Warning: brute force incoming...

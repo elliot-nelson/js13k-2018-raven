@@ -12,9 +12,9 @@ class Door {
             this.y = this.v * 32 + 32;
         }
 
-        this.determinePlacement();
-
-        this.toggleRadius = 20;
+        // 58 is far enough away that the user's "elevator start position"
+        // will trigger the door.
+        this.toggleRadius = 58;
 
         this.control = doorData.control;
 
@@ -25,10 +25,14 @@ class Door {
     }
 
     update(delta) {
-
-        this.slide += 10 * delta;
-        if (this.slide > 30) {
-            this.slide = 0;
+        if (Util.pointNearPoint(this, game.player, this.toggleRadius)) {
+            if (this.slide < 30) {
+                this.slide = Math.min(30, this.slide + 32 * delta);
+            }
+        } else {
+            if (this.slide > 0) {
+                this.slide = Math.max(0, this.slide - 32 * delta);
+            }
         }
 
         this.toggled = undefined;
@@ -156,17 +160,5 @@ class Door {
                 }
             ];
         }
-    }
-
-    determinePlacement() {
-        /*if (Util.wallAtUV(this.u, this.v - 1)) {
-            this.facing = 0;
-        } else if (Util.wallAtUV(this.u - 1, this.v)) {
-            this.facing = 90;
-        } else if (Util.wallAtUV(this.u, this.v + 1)) {
-            this.facing = 180;
-        } else {
-            this.facing = 270;
-        }*/
     }
 }

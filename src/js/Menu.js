@@ -4,6 +4,7 @@ class Menu {
         this.escapeHandler = escapeHandler;
 
         this.selected = 0;
+        this.entryHeight = 36;
     }
 
     open() {
@@ -20,8 +21,7 @@ class Menu {
         game.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         game.ctx.fillRect(0, 0, game.canvas.width, game.canvas.height);
 
-        let menuTop = game.canvas.height / 2 - this.options.length * 30;
-        let entryHeight = 30;
+        let menuTop = game.canvas.height / 2 - this.options.length * (this.entryHeight * 0.75);
 
         game.ctx.save();
         game.ctx.translate(game.canvas.width / 2, game.canvas.height / 2);
@@ -30,11 +30,11 @@ class Menu {
         game.ctx.translate(-game.canvas.width / 2, -game.canvas.height / 2);
 
         this.options.forEach((entry, idx) => {
-            game.ctx.font = '18px sans-serif';
+            game.ctx.font = Asset.getFontString(18);
 
             entry.width = game.ctx.measureText(entry.text).width;
             entry.left = game.canvas.width / 2 - entry.width / 2;
-            entry.bottom = menuTop + idx * entryHeight;
+            entry.bottom = menuTop + idx * this.entryHeight;
 
             if (idx === this.selected && this.scale === 0) {
                 game.ctx.fillStyle = 'rgba(255, 255, 255, 1)';

@@ -1,8 +1,15 @@
 const Asset = {
     img: {
     },
+
     tile: {
     },
+
+    // Obviously, the ideal would be to bundle in an OTT or pixel art font and give every user
+    // the same experience.
+    //
+    // However, I've tested all of these and they all "work", so this should cover us.
+    fontFamily: "Monaco,'Lucida Sans Typewriter','Andale Mono','Lucida Console','Courier New',Courier,monospace",
 
     loadImage(src) {
         const img = new Image();
@@ -20,5 +27,9 @@ const Asset = {
         Asset.tile.floor      = Asset.loadImage('assets/floor.png');
         Asset.tile.wall       = Asset.loadImage('assets/wall.png');
         Asset.tile.door       = Asset.loadImage('assets/door.png');
+    },
+
+    getFontString(pixels) {
+        return '' + pixels + 'px ' + Asset.fontFamily;
     }
 };
