@@ -337,6 +337,8 @@ class Game {
             if (!this.menu) {
                 this.renderLevelText();
             }
+
+            this.buildAttackMap();
         }
 
         if (this.intro && !this.menu) {
@@ -885,5 +887,8 @@ class Game {
             }
             this.input.queue = [];
         }
+    }
+
+    buildAttackMap() {
     }
 };

@@ -35,29 +35,27 @@ const Util = {
         return 0 <= a && a <= 1 && 0 <= b && b <= 1 && 0 <= c && c <= 1;
     },
 
+    pointSpottedXY(x, y) {
+        let ptr = Math.floor(y + game.offset.y) * game.canvas.width +
+                  Math.floor(x + game.offset.x);
+
+        // If the green channel in the los canvas is non-zero, this entity is
+        // visible to the player. (Technically any channel will do, but alpha
+        // is not reliable and red is used during death animations, so we'll go
+        // with green).
+        return game.losData.data[ptr * 4 + 1] > 0;
+    },
+
     entitySpotted(entity) {
-        // 5-point check
-        let offsets = [
-            [0, 0],
-            [-entity.width / 2, -entity.height / 2],
-            [entity.width / 2, -entity.height / 2],
-            [-entity.width / 2, entity.height / 2],
-            [entity.width / 2, entity.height / 2]
-        ];
+        let dx = entity.width / 2;
+        let dy = entity.height / 2;
 
-        for (let i = 0; i < offsets.length; i++) {
-            let ptr = Math.floor(entity.y + game.offset.y + offsets[i][1]) * game.canvas.width +
-                      Math.floor(entity.x + game.offset.x + offsets[i][0]);
-            // If the green channel in the los canvas is non-zero, this entity is
-            // visible to the player. (Technically any channel will do, but alpha
-            // is not reliable and red is used during death animations, so we'll go
-            // with green).
-            if (game.losData.data[ptr * 4 + 1] > 0) {
-                return true;
-            }
-        }
-
-        return false;
+        // 5 point check (center, each corner)
+        return Util.pointSpottedXY(entity.x, entity.y) ||
+            Util.pointSpottedXY(entity.x - dx, entity.y - dy) ||
+            Util.pointSpottedXY(entity.x + dx, entity.y + dy) ||
+            Util.pointSpottedXY(entity.x - dx, entity.y + dy) ||
+            Util.pointSpottedXY(entity.x + dx, entity.y - dy);
 
         /*for(let i = 0; i < game.friendlySight.length; i++) {
             if (Util.pointInTriangle(entity, ...game.friendlySight[i])) {

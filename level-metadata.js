@@ -2,7 +2,7 @@
  * Level metadata. The level packer will merge this into the JSON output from Tiled.
  */
 const LevelMetadata = {
-    level00: {
+    level01: {
         name: 'Annex 01A',
         hint: '! Look around with the mouse. Move with W/A/S/D.',
         intro:
@@ -12,7 +12,11 @@ const LevelMetadata = {
             'Your mission is simple: enter the facility, bring our security cameras back online, and ' +
             'contain all active Ravens. Be careful in there.'
     },
-    level01: {
+    level02: {
+        name: 'Annex 01B',
+        hint: '! Once spotted, do not look away from a Raven.'
+    },
+    level09: {
         name: 'Badofjfoeof',
         hint: ''
     }

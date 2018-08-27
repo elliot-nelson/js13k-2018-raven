@@ -11,7 +11,8 @@ class Enemy {
         this.width = 8;
         this.height = 6;
 
-        this.killRadius = 6;
+        this.attackRadius = 192;
+        this.killRadius = 10;
 
         this.travelSeconds = 2;
         this.state = 'idle';
@@ -29,6 +30,7 @@ class Enemy {
             this.state = 'idle';
         }
 
+        console.log(this.state);
         if (this.state === 'frozen') {
             this.vx = 0;
             this.vy = 0;
@@ -51,6 +53,15 @@ class Enemy {
             }
 */
         } else if (this.state === 'idle') {
+            let attack = this.chartAttackPath();
+
+            if (attack) {
+                console.log(attack);
+                this.attackVel = 260;
+                this.attackAccel = 670;
+                this.state = 'attack';
+            }
+
             /*this.vx = this.vx * 0.8;
             this.vy = this.vy * 0.8;
             if (this.vx > -1 && this.vx < 1) { this.vx = 0; }
@@ -63,27 +74,45 @@ class Enemy {
                 this.maxSpeed = Math.min(10, d / this.travelSeconds);
             }*/
 
-            this.maxSpeed = 60;
-            this.state = 'attack';
         } else if (this.state === 'attack') {
+            return;
             // here, we can use the route map
-            var angle = Math.atan2(game.player.y - this.y, game.player.x - this.x);
-            this.vx += Math.cos(angle) * this.ax * delta;
-            this.vy += Math.sin(angle) * this.ay * delta;
+            let angle = Util.r2d(Math.atan2(game.player.y - this.y, game.player.x - this.x));
+            let angleDiff = Math.abs(angle - game.facing);
+            let dist = distance(this, game.player);
 
-            if (this.vx > this.maxSpeed) {
-                this.vx = this.maxSpeed;
-            } else if (this.vx < -this.maxSpeed) {
-                this.vx = -this.maxSpeed;
+            console.log([dist, angleDiff]);
+            if (dist > 40) {
+                // This is a very simple way to get "behind" the player -- for every 3 degrees
+                // off from the player's facing, move our target 1 pixel back. So, if we're
+                // directly behind the player, just lunge at them; if we're 45 degrees to the side,
+                // aim 15 pixels behind them.
+                let target = {
+                    x: game.player.x - (angleDiff / 3) * Math.cos(Util.d2r(game.facing)),
+                    y: game.player.y - (angleDiff / 3) * Math.sin(Util.d2r(game.facing))
+                };
+                angle = Util.r2d(Math.atan2(target.y - this.y, target.x - this.x));
             }
-            if (this.vy > this.maxSpeed) {
-                this.vy = this.maxSpeed;
-            } else if (this.vy < -this.maxSpeed) {
-                this.vy = -this.maxSpeed;
+
+            /*this.vx += Math.cos(Util.d2r(angle)) * this.attackAccel * delta;
+            this.vy += Math.sin(Util.d2r(angle)) * this.attackAccel * delta;
+
+            console.log([angle, this.vx, this.vy]);
+            let vel = distance({ x: 0, y: 0 }, { x: this.vx, y: this.vy });
+            if (vel > this.attackVel) {
+                vel = this.attackVel;
             }
+            angle = Math.atan2(this.vy, this.vx);
+            this.vx = Math.cos(angle) * vel;
+            this.vy = Math.sin(angle) * vel;
+            console.log([angle, this.vx, this.vy]);*/
+
+            this.vx = Math.cos(Util.d2r(angle)) * this.attackVel;
+            this.vy = Math.sin(Util.d2r(angle)) * this.attackVel;
 
             this.x += this.vx * delta;
             this.y += this.vy * delta;
+            //console.log([this.x, this.y]);
 
             /*var d = distance(game.player, this);
             if (d < 10) {
@@ -151,5 +180,37 @@ class Enemy {
             }
             game.ctx.globalAlpha = 1;
         }
+    }
+
+    // Determine whether we are totally clear from current point to player
+    chartAttackPath() {
+        let dist = distance(this, game.player);
+
+        if (dist > this.attackRadius) {
+            return;
+        }
+
+        let angle = Util.r2d(Math.atan2(game.player.y - this.y, game.player.x - this.x));
+        let shadow = {
+            x: this.x,
+            y: this.y,
+            width: 4,
+            height: 4
+        };
+
+        for (let i = 0; i < dist; i += 2) {
+            shadow.x = this.x + Math.cos(Util.d2r(angle)) * i;
+            shadow.y = this.y + Math.sin(Util.d2r(angle)) * i;
+
+            if (distance(shadow, game.player) <= this.killRadius) break;
+
+            if (Util.entitySpotted(shadow)) {
+                console.log("SPOTTED at " + distance(shadow, game.player) + " away");
+                return;
+            }
+        }
+
+        console.log("chartAttackPath success");
+        return [angle, dist];
     }
 }
