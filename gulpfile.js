@@ -42,7 +42,7 @@ gulp.task('build:js', () => {
         .pipe(concat('app.js'))
         .pipe(babel())
         .pipe(size())
-        .pipe(uglify({ toplevel: true }))
+        //.pipe(uglify({ toplevel: true }))
         .pipe(size())
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('dist'));

@@ -3,6 +3,33 @@ const Util = {
     // Angles
     //
 
+    atan(y, x) {
+        return Util.r2d(Math.atan2(y, x));
+    },
+
+    atanPoints(p1, p2) {
+        return Util.atan(p2.y - p1.y, p2.x - p1.x);
+    },
+
+    atanEdge(edge) {
+        return Util.atanPoints(edge.p1, edge.p2);
+    },
+
+    normalAngle(edge) {
+        // This function works only for edges that are clockwise (floor on left). We
+        // take pains throughout to make sure we save edges this way so we can make
+        // this assumption.
+        return (Util.atanEdge(edge) + 90) % 360;
+    },
+
+    cos(d) {
+        return Math.cos(Util.d2r(d));
+    },
+
+    sin(d) {
+        return Math.sin(Util.d2r(d));
+    },
+
     r2d(r) {
         return Math.floor(r * 3600 / Math.PI / 2) / 10;
     },
@@ -20,8 +47,18 @@ const Util = {
     // Points
     //
 
+    distance(p1, p2) {
+        return Math.sqrt(Util.distfast(p1, p2));
+    },
+
+    distfast(p1, p2) {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        return dx * dx + dy * dy;
+    },
+
     pointNearPoint(p1, p2, range) {
-        return (distance(p1, p2) <= range);
+        return (Util.distance(p1, p2) <= range);
     },
 
     // Return true if point is inside given triangle. This particular version
@@ -36,6 +73,13 @@ const Util = {
     },
 
     pointSpottedXY(x, y) {
+        for (let i = 0; i < game.vision.length; i++) {
+            if (Util.pointInPolygon({ x: x, y: y }, game.vision[i])) return true;
+        }
+        return false;
+
+        // ---
+
         let ptr = Math.floor(y + game.offset.y) * game.canvas.width +
                   Math.floor(x + game.offset.x);
 
@@ -62,6 +106,25 @@ const Util = {
                 return true;
             }
         }*/
+    },
+
+    // Return true if the given point is within the specified polygon. This algorithm
+    // is a simple even-odd check.
+    //
+    // See:
+    //   https://en.wikipedia.org/wiki/Even%E2%80%93odd_rule
+    //   https://www.geeksforgeeks.org/how-to-check-if-a-given-point-lies-inside-a-polygon/
+    //
+    pointInPolygon(p, polygon) {
+        let inside = false;
+
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i++) {
+            if ((polygon[i].y > p.y) != (polygon[j].y > p.y) &&
+                p.x < polygon[i].x + (polygon[j].x - polygon[i].x) * (p.y - polygon[i].y) / (polygon[j].y - polygon[i].y))
+                inside = !inside;
+        }
+
+        return inside;
     },
 
     //
@@ -101,6 +164,7 @@ const Util = {
             entity.y -= ((entity.y + entity.height / 2) % 32);
         }
     },
+
 
     // Random number generator.
     // https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript

@@ -77,7 +77,7 @@ class Game {
                 {
                     text: 'START',
                     handler: () => {
-                        this.pendingLevelIndex = 0;
+                        this.pendingLevelIndex = 2;
                         console.log("set " + this.pendingLevelIndex);
                         this.unpause();
                     }
@@ -162,38 +162,25 @@ class Game {
 
             this.facing = r2d(Math.atan2(this.crosshair.y - this.player.y, this.crosshair.x - this.player.x));
 
-            this.friendlySight = [];
+            this.vision = [];
             if (!this.player.dead) {
-                this.friendlySight = this.friendlySight.concat(this.calculateVisibility(this.player, this.facing, this.fov, 4, 5));
+                this.vision = this.vision.concat(this.calculateVisibility(this.player, this.facing, this.fov, 4, 5));
             }
             this.cameras.forEach(camera => {
                 if (camera.enabled) {
-                    this.friendlySight = this.friendlySight.concat(this.calculateVisibility(camera, camera.facing, camera.fov, 12, 0));
+                    this.vision = this.vision.concat(this.calculateVisibility(camera, camera.facing, camera.fov, 12, 0));
                 }
             });
 
-            // Next, we "render" the LOS canvas, which is actually part of updating.
-            this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.friendlySight.forEach((triangle, idx) => {
-                this.losCtx.fillStyle = 'white';
-                this.losCtx.beginPath();
-                this.losCtx.moveTo(this.offset.x + triangle[0].x, this.offset.y + triangle[0].y);
-                this.losCtx.lineTo(this.offset.x + triangle[1].x, this.offset.y + triangle[1].y);
-                this.losCtx.lineTo(this.offset.x + triangle[2].x, this.offset.y + triangle[2].y);
-                this.losCtx.closePath();
-                this.losCtx.fill();
-            });
-            this.losData = this.losCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-
-            this.updatePathRoutes();
+            //this.updatePathRoutes();
 
             this.enemies.forEach(enemy => enemy.update(delta));
             this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
 
             this.particles.forEach(particle => particle.update(delta));
             this.particles = this.particles.filter(particle => particle.state !== 'dead');
+
+            this.buildAttackGraph2();
 
             if (!this.player.dead) {
                 this.enemies.forEach(enemy => {
@@ -289,6 +276,22 @@ class Game {
                 this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             }
 
+            // Next, we "render" the LOS canvas
+            this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.vision.forEach((polygon, idx) => {
+                this.losCtx.fillStyle = 'white';
+                this.losCtx.beginPath();
+                this.losCtx.moveTo(this.offset.x + polygon[0].x, this.offset.y + polygon[0].y);
+                for (let i = 1; i < polygon.length; i++) {
+                    this.losCtx.lineTo(this.offset.x + polygon[i].x, this.offset.y + polygon[i].y);
+                }
+                this.losCtx.closePath();
+                this.losCtx.fill();
+            });
+            //this.losData = this.losCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+
             // Blit visibility
             this.ctx.save();
             // attempted: lighten, multiply, darken, source-in (darken looks best for shadows so far)
@@ -312,6 +315,8 @@ class Game {
             // after this point, as it won't line up with the rest of the map in case of,
             // e.g., the death spin animation.
             this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            Enemy.renderAttackWarning();
 
             if (this.player.dead) {
                 /*this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
@@ -338,7 +343,8 @@ class Game {
                 this.renderLevelText();
             }
 
-            this.buildAttackMap();
+            this.buildAttackGraph();
+            this.showAttackGraph2();
         }
 
         if (this.intro && !this.menu) {
@@ -643,13 +649,14 @@ class Game {
         // like to cut into the tile; but our simplistic algorithm above doesn't distinguish
         // between concave and convex corners. So we make up a bit of the legwork here.
         this.losEdges = Object.keys(edges).map(k => {
-            let ax = 0, bx = 0, ay = 0, by = 0;
+            let ax = 0, bx = 0, ay = 0, by = 0, flip = false;
             let cut = this.tileVisibilityInset;
 
             if (k.endsWith('left')) {
                 ax = bx = -cut;
                 ay = -cut;
                 by = cut;
+                flip = true;
                 if (!Util.wallAtXY(edges[k][0] + ax, edges[k][1] + ay)) ay = -ay;
                 if (!Util.wallAtXY(edges[k][2] + bx, edges[k][3] + by)) by = -by;
             } else if (k.endsWith('right')) {
@@ -668,11 +675,12 @@ class Game {
                 ay = by = cut;
                 ax = -cut;
                 bx = cut;
+                flip = true;
                 if (!Util.wallAtXY(edges[k][0] + ax, edges[k][1] + ay)) ax = -ax;
                 if (!Util.wallAtXY(edges[k][2] + bx, edges[k][3] + by)) bx = -bx;
             }
 
-            return {
+            let result = {
                 p1: {
                     x: edges[k][0] + ax,
                     y: edges[k][1] + ay
@@ -682,6 +690,18 @@ class Game {
                     y: edges[k][3] + by
                 }
             };
+
+            // Definitely room for improvement here (and in this whole function). I've managed
+            // to scrape together something that works, but making it work in the general case
+            // (and correctly) is beyond me in 30 days :).
+            //
+            // This "flips" the appropriate edges so that ALL edges produced by this function
+            // are clockwise (that is: following the edge from p1->p2 should always have floor
+            // on the LEFT side and wall on the RIGHT side). This allows us to make a lot of
+            // time-saving assumptions in the pathing phase.
+            if (flip) [result.p1, result.p2] = [result.p2, result.p1];
+
+            return result;
         });
     }
 
@@ -738,76 +758,51 @@ class Game {
 
         if (endAngle < startAngle) endAngle += 360;
 
-        // How much space between origin and ray start -- the larger the offset,
-        // the less "sharp" the origin point is.
+        // How much space between the "origin point" and the arc of vision? Imagine
+        // for example, a security camera (the arc of vision starts at the lens,
+        // not the base of the camera).
         offset = offset || 0;
 
-        // Backwalk - how many pixels to walk "backwards" before casting rays.
-        // Often a large offset needs a large backwalk.
+        // Backwalk - how many pixels to walk "backwards" before casting rays. Sometimes
+        // you need some pixels of backwalk to prevent the arc of vision from being
+        // too far in front of the subject (mostly it just doesn't look good).
         backwalk = backwalk || 0;
 
+        // Calculate a new temporary origin point, with backwalk taken into account.
         origin = {
             x: origin.x - Math.cos(Util.d2r(facing)) * backwalk,
             y: origin.y - Math.sin(Util.d2r(facing)) * backwalk
         };
 
+        // Gap between rays cast. More of an art than a science... a higher gap is faster,
+        // but potentially introduces artifacts at corners.
         let sweep = 0.8;
-
-        let angles = [startAngle, endAngle];
-
-        // This approach  blah
-
-        /*for (var i = 0; i < edges.length; i++) {
-            var edge = edges[i];
-            var angle = Util.r2d(Math.atan2(edge.p1.y - origin.y, edge.p1.x - origin.x));
-            if (Util.angleWithin(angle, startAngle, endAngle)) {
-                angles.push(angle);
-                if (angle - 2 >= startAngle) {
-                    angles.push(angle - 2);
-                }
-                if (angle + 2 <= endAngle) {
-                    angles.push(angle + 2);
-                }
-            }
-        }*/
-
-        if (this.input.keys[71]) console.log([startAngle, endAngle]);
-        if (this.input.keys[71]) console.log(angles);
-        angles = angles.map(a => dw(a - startAngle));
-        if (this.input.keys[71]) console.log(angles);
-        angles.sort((a, b) => a - b);
-        if (this.input.keys[71]) console.log(angles);
-        angles = angles.map(a => dw(a + startAngle));
-        if (this.input.keys[71]) console.log(angles);
-        this.input.keys[71] = undefined;
-
-        var triangles = [];
-        var lastp;
-        var lastAngle = undefined;
 
         // Shadows actually seem a little unnatural if they are super crisp. Introduce
         // just enough jitter that the user won't see a sharp unmoving line for more
         // than ~1sec.
         let jitter = (game.framems % 1000) / 1000;
 
+        let frontSweep = [];
+        let backSweep = [];
+
         let angle = startAngle + jitter;
         while (angle < endAngle) {
-        //for(i = 0; i < angles.length; i++) {
-         //   angle = angles[i];
-
-//            if (angles[i] === lastAngle) continue;
-  //          lastAngle = angles[i];
-
+            // Calculate a source, taking the offset into account
             let source = {
                 x: origin.x + Math.cos(Util.d2r(angle)) * offset,
                 y: origin.y + Math.sin(Util.d2r(angle)) * offset
             };
 
+            // Calculate the ray endpoint
             let ray = {
                 x: origin.x + Math.cos(Util.d2r(angle)) * 1000,
                 y: origin.y + Math.sin(Util.d2r(angle)) * 1000
             };
 
+            // Loop through all known LOS edges, and when we intersect one, shorten
+            // the current ray. TODO: This is a potential area of improvement (edge
+            // culling, early exits, etc.).
             for (let j = 0; j < edges.length; j++) {
                 let inter = this.intersection({ p1: source, p2: ray }, edges[j]);
                 if (inter) {
@@ -815,63 +810,34 @@ class Game {
                 }
             }
 
-            if (lastp) {
-                triangles.push([source, lastp, ray]);
-            }
-
-            lastp = ray;
+            // In theory, this is where we would keep an array of vision polygons,
+            // each one being:
+            //
+            //     [lastSource, source, ray, lastRay]
+            //
+            // (If offset=0, then we could further optimize and just save the vision
+            // polygons as triangles, but using triangles when source changes for each
+            // ray results in ugly lines near the player.)
+            //
+            // Rather than keep polygons at all, though, we can just "sweep" forwards
+            // for each point far from the player (the ray) and "sweep" backwards for
+            // each point near the player (the source). Concatenating all these points
+            // together then produces a single polygon representing the entire field of
+            // vision, which we can draw in a single fill call.
+            //
+            // Note order is important: we need the final polygons to be stored with
+            // edges "clockwise" (in this case, we are optimizing for enemy pathing, which
+            // means we want NON-VISIBLE on the left and VISIBLE on the right).
+            frontSweep.unshift(ray);
+            backSweep.push(source);
 
             angle += sweep;
         }
 
-        return triangles;
+        let polygon = backSweep.concat(frontSweep);
+        return [polygon];
     }
 
-    updatePathRoutes() {
-        var open = [{ u: Math.floor(this.player.x / 32), v: Math.floor(this.player.y / 32), c: 0 }];
-        var routes = [];
-
-        var proc = (u, v, c) => {
-            if (Util.tileInWall(u, v)) {
-                return;
-            }
-
-            var priorCost = routes[v * this.level.width + u];
-
-            if (this.pointInFriendlySight({ x: u * 32 + 16, y: v * 32 + 16})) {
-                c += 100;
-            } else {
-                c += 2;
-            }
-
-            if (!priorCost || priorCost > c) {
-                open.push({ u, v, c });
-            }
-        }
-
-        /*while(open.length > 0) {
-            var tile = open.shift();
-            routes[tile.v * this.level.width + tile.u] = tile.c;
-
-            proc(tile.u - 1, tile.v, tile.c);
-            proc(tile.u + 1, tile.v, tile.c);
-            proc(tile.u, tile.v - 1, tile.c);
-            proc(tile.u, tile.v + 1, tile.c);
-        }*/
-
-        //console.log(routes);
-        this.routes = routes;
-    }
-
-    pointInFriendlySight(p) {
-        for(let i = 0; i < this.friendlySight.length; i++) {
-            var triangle = this.friendlySight[i];
-            if (Util.pointInTriangle(p, triangle[0], triangle[1], triangle[2])) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     handleCheatCodes() {
         // GOTOnn (nn = 01-99, number of a valid level)
@@ -889,6 +855,264 @@ class Game {
         }
     }
 
-    buildAttackMap() {
+    buildAttackGraph() {
+        return;
+
+        for (let en = 0; en < game.enemies.length; en++) {
+        let enemy = game.enemies[en];
+
+        // Get pre-calculated visibility edges
+        let edges = this.losEdges.slice(0);
+
+        // Add in dynamic visibility edges
+        this.doors.forEach(door => edges = edges.concat(door.getLosEdges()));
+
+        // Add in LOS edges
+        for (let i = 0; i < game.vision.length; i++) {
+            let polygon = game.vision[i];
+            for (let j = 0; j < polygon.length; j++) {
+                edges.push({ p1: polygon[j], p2: polygon[(j + 1) % polygon.length] });
+            }
+        }
+
+        let queue = [[{ p1: enemy, p2: game.player }]];
+        let paths = [];
+        let badpaths = [];
+
+        while (queue.length > 0) {
+            let path = queue.shift().slice(0);
+            let edge = path[path.length - 1];
+            let cuttingEdge = edge;
+            let closestEdge;
+
+            for (let i = 0; i < edges.length; i++) {
+                let sect = this.intersection(cuttingEdge, edges[i]);
+                if (sect) {
+                    closestEdge = edges[i];
+                    cuttingEdge = { p1: cuttingEdge.p1, p2: sect };
+                }
+            }
+
+            if (Util.pointSpottedXY((cuttingEdge.p2.x + cuttingEdge.p1.x) / 2, (cuttingEdge.p2.y + cuttingEdge.p1.y) / 2)) {
+                badpaths.push(path);
+                continue;
+            }
+
+            //if (distfast(cuttingEdge.p1, edge.p2) < distfast(cuttingEdge.p1, cuttingEdge.p2) ||
+            if (distance(cuttingEdge.p2, edge.p2) <= enemy.killRadius) {
+                cuttingEdge = edge;
+                closestEdge = undefined;
+            }
+
+            if (closestEdge) {
+                let normalAngle = Util.normalAngle(closestEdge);
+                let dx = Util.cos(normalAngle) * 6;
+                let dy = Util.sin(normalAngle) * 6;
+
+                cuttingEdge = {
+                    p1: cuttingEdge.p1,
+                    p2: {
+                        x: cuttingEdge.p2.x + dx,
+                        y: cuttingEdge.p2.y + dy
+                    }
+                };
+                path[path.length - 1] = cuttingEdge;
+                if (path.length > 12) {
+                    badpaths.push(path);
+                } else {
+                    let edgeAngle = Util.atanEdge(closestEdge);
+                    let ex = Util.cos(edgeAngle) * 6;
+                    let ey = Util.sin(edgeAngle) * 6;
+
+                    let p1 = closestEdge.p1;
+                    let p2 = closestEdge.p2;
+
+                    //dx = 0;
+                    //dy = 0;
+                    ex = ex;
+                    ey = ey;
+                    p1 = { x: p1.x + dx - ex, y: p1.y + dy - ey };
+                    p2 = { x: p2.x + dx + ex, y: p2.y + dy + ey };
+
+                    queue.push(path.concat([
+                        { p1: cuttingEdge.p2, p2: p1 },
+                        { p1: p1, p2: edge.p2 }
+                    ]));
+                    queue.push(path.concat([
+                        { p1: cuttingEdge.p2, p2: p2 },
+                        { p1: p2, p2: edge.p2 }
+                    ]));
+                    /*
+                    queue.push(path.concat([
+                        { p1: cuttingEdge.p2, p2: closestEdge.p1 },
+                        { p1: closestEdge.p1, p2: edge.p2 }
+                    ]));
+                    queue.push(path.concat([
+                        { p1: cuttingEdge.p2, p2: closestEdge.p2 },
+                        { p1: closestEdge.p2, p2: edge.p2 }
+                    ]));
+                    */
+                }
+            } else {
+                paths.push(path);
+            }
+
+            //console.log(paths);
+        }
+
+        // Determine the SHORTEST path. We should add up all the edge lengths, but for now,
+        // just number of segments is probably close enough.
+        paths = paths.sort((a, b) => {
+            return b.length - a.length;
+        });
+        badpaths = badpaths.sort((a, b) => {
+            return b.length - a.length;
+        });
+        paths = paths.slice(0, 1);
+        badpaths = badpaths.slice(0, 1);
+
+        for (let i = 0; i < badpaths.length; i++) {
+            let path = badpaths[i];
+
+            game.ctx.strokeStyle = 'blue';
+            game.ctx.beginPath();
+            for(let j = 0; j < path.length; j++) {
+                game.ctx.moveTo(game.offset.x + path[j].p1.x, game.offset.y + path[j].p1.y);
+                game.ctx.lineTo(game.offset.x + path[j].p2.x, game.offset.y + path[j].p2.y);
+            }
+            game.ctx.stroke();
+        }
+
+        for (let i = 0; i < paths.length; i++) {
+            let path = paths[i];
+
+            game.ctx.strokeStyle = 'red';
+            game.ctx.beginPath();
+            for(let j = 0; j < path.length; j++) {
+                game.ctx.moveTo(game.offset.x + path[j].p1.x, game.offset.y + path[j].p1.y);
+                game.ctx.lineTo(game.offset.x + path[j].p2.x, game.offset.y + path[j].p2.y);
+            }
+            game.ctx.stroke();
+        }
+
+        enemy.attackPath = paths[0];
+        }
+        /*let grid = {};
+        let queue = [];
+        let density = 8;
+
+        function attemptToVisit(gx, gy, c) {
+            let x = game.player.x + gx * density;
+            let y = game.player.y + gy * density;
+
+           if (Util.wallAtXY(x, y) || Util.pointSpottedXY(x, y)) {
+            //if (Util.wallAtXY(x, y)) {
+                c = 100000;
+                grid[gx + ',' + gy] = { x, y, c };
+            } else if (!grid[gx + ',' + gy] || c < grid[gx + ',' + gy]) {
+                grid[gx + ',' + gy] = { x, y, c };
+                queue.push([gx, gy, c]);
+            }
+        };
+
+        grid["0,0"] = 0;
+        queue.push([0, 0, density]);
+
+        while (queue.length > 0) {
+            let entry = queue.shift();
+
+            attemptToVisit(entry[0] + 1, entry[1], entry[2] + density);
+            attemptToVisit(entry[0] - 1, entry[1], entry[2] + density);
+            attemptToVisit(entry[0], entry[1] + 1, entry[2] + density);
+            attemptToVisit(entry[0], entry[1] - 1, entry[2] + density);
+
+            if (Object.keys(grid).length > 1900) break;
+        }
+
+        let keys = Object.keys(grid);
+        let maxValue = 0;
+        for (let i = 0; i < keys.length; i++) {
+            let v = grid[keys[i]];
+            if (v.c === 100000) {
+                this.ctx.fillStyle = 'rgba(255, 0, 0, 255)';
+            } else {
+                maxValue = Math.max(maxValue, v.c);
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 255)';
+            }
+            this.ctx.fillRect(game.offset.x + v.x, game.offset.y + v.y, 1, 1);
+        }
+        console.log([keys.length, maxValue]);*/
+    }
+
+    buildAttackGraph2() {
+        let target = {
+            x: game.player.x - Util.cos(game.facing) * 34,
+            y: game.player.y - Util.sin(game.facing) * 34,
+        };
+
+        let pu = Math.floor(target.x / 32);
+        let pv = Math.floor(target.y / 32);
+        var open = [[pu, pv, 2]];
+        var grid = [];
+
+        const examine = (u, v, c) => {
+            if (Util.wallAtUV(u, v)) {
+                grid[v * this.level.width + u] = 50000;
+                return;
+            }
+
+            var priorCost = grid[v * this.level.width + u];
+
+            if (!(u === pu && v === pv) && Util.pointSpottedXY(u * 32 + 16, v * 32 + 16)) {
+                c += 10000;
+            }
+
+            if (!priorCost || c < priorCost) {
+                grid[v * this.level.width + u] = c;
+                open.push([u - 1, v, c + 32]);
+                open.push([u + 1, v, c + 32]);
+                open.push([u, v - 1, c + 32]);
+                open.push([u, v + 1, c + 32]);
+            }
+        }
+
+        while(open.length > 0) {
+            var tile = open.shift();
+            examine(tile[0], tile[1], tile[2]);
+        }
+
+        /*while(open.length > 0) {
+            var tile = open.shift();
+            routes[tile.v * this.level.width + tile.u] = tile.c;
+
+            proc(tile.u - 1, tile.v, tile.c);
+            proc(tile.u + 1, tile.v, tile.c);
+            proc(tile.u, tile.v - 1, tile.c);
+            proc(tile.u, tile.v + 1, tile.c);
+        }*/
+
+        //console.log(routes);
+        this.attackGrid = grid;
+    }
+
+    showAttackGraph2() {
+        return;
+        for (let i = 0; i < this.level.height; i++) {
+            for (let j = 0; j < this.level.width; j++) {
+                let cost = this.attackGrid[i * this.level.width + j];
+                let x = game.offset.x + j * 32;
+                let y = game.offset.y + i * 32;
+
+                if (cost >= 10000) {
+                    game.ctx.fillStyle = 'rgba(255, 0, 0, 30)';
+                    game.ctx.fillRect(x + 16 - 8, y + 16 - 8, 8, 8);
+                } else {
+                    game.ctx.fillStyle = 'rgba(0, 255, 0, 30)';
+                    game.ctx.font = '8px serif';
+                    game.ctx.fillText("" + cost, x + 2, y + 2);
+                }
+
+            }
+        }
     }
 };
