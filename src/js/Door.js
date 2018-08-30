@@ -26,7 +26,9 @@ class Door {
     }
 
     update(delta) {
-        if (Util.pointNearPoint(this, game.player, this.toggleRadius)) {
+        let playerNear = Util.pointNearPoint(this, game.player, this.toggleRadius);
+
+        if (playerNear && !game.levelComplete) {
             if (this.slide < 30) {
                 this.slide = Math.min(30, this.slide + 32 * delta);
             }

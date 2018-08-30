@@ -39,6 +39,8 @@ class Game {
         this.level = undefined;
         this.intro = undefined;
         this.player = undefined;
+        this.levelComplete = undefined;
+        this.levelCompleteMs = undefined;
 
         this.framems = 0;
         this.enemies = [];
@@ -110,6 +112,7 @@ class Game {
 
     update(delta) {
         if (typeof this.pendingLevelIndex !== 'undefined') {
+            console.log("jumping to " + this.pendingLevelIndex);
             this.load(this.pendingLevelIndex);
             this.pendingLevelIndex = undefined;
         }
@@ -122,9 +125,14 @@ class Game {
                 this.intro = undefined;
             }
             this.levelms = performance.now();
-        } else {
+        } else if (this.level) {
             if (this.player.dead) {
                 this.deathFrame++;
+            }
+
+            if (this.levelComplete && (this.framems - this.levelCompleteMs) > 2200) {
+                console.log("ON TO NEXT LEVEL");
+                this.pendingLevelIndex = this.levelIndex + 1;
             }
 
             this.player.update(delta);
@@ -171,6 +179,12 @@ class Game {
                     this.vision = this.vision.concat(this.calculateVisibility(camera, camera.facing, camera.fov, 12, 0));
                 }
             });
+            if (Util.pointInBounds(this.player, this.level.enterBounds)) {
+                this.vision.push(this.getVisibilityPolygonForBounds(this.level.enterBounds));
+            }
+            if (Util.pointInBounds(this.player, this.level.exitBounds)) {
+                this.vision.push(this.getVisibilityPolygonForBounds(this.level.exitBounds));
+            }
 
             //this.updatePathRoutes();
 
@@ -196,6 +210,11 @@ class Game {
                     }
                 });
                 this.activeTerminal = activeTerminal;
+
+                if (!this.levelComplete && Util.pointInBounds(this.player, this.level.exitBounds)) {
+                    this.levelComplete = true;
+                    this.levelCompleteMs = performance.now();
+                }
             }
 
             this.renderPrep = true;
@@ -337,6 +356,17 @@ class Game {
                 let x = this.canvas.width / 2 - this.ctx.measureText('YOU ARE DEAD').width / 2;
                 this.ctx.fillStyle = 'rgba(255, 255, 255, ' + opacity + ')';
                 this.ctx.fillText('YOU ARE DEAD', x, this.canvas.height / 2);
+            }
+
+            if (this.levelComplete) {
+                let opacity = Math.min(1, (game.framems - game.levelCompleteMs) / 2000);
+                this.ctx.fillStyle = 'rgba(0, 0, 0, ' + opacity + ')';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.ctx.font = Asset.getFontString(40);
+                let x = this.canvas.width / 2 - this.ctx.measureText('CLEAR').width / 2;
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                this.ctx.fillText('CLEAR', x, this.canvas.height / 2);
             }
 
             if (!this.menu) {
@@ -500,6 +530,7 @@ class Game {
         this.levelIndex = levelIndex;
         this.level = Object.assign({}, LevelCache[levelIndex]);
         this.level.data = this.level.data.slice(0);
+        this.levelComplete = false;
 
         let eb = this.level.enterBounds;
 
@@ -838,6 +869,15 @@ class Game {
         return [polygon];
     }
 
+    getVisibilityPolygonForBounds(bounds) {
+        let polygon = [
+            { x: bounds.left, y: bounds.top },
+            { x: bounds.right, y: bounds.top },
+            { x: bounds.right, y: bounds.bottom },
+            { x: bounds.left, y: bounds.bottom }
+        ];
+        return polygon;
+    }
 
     handleCheatCodes() {
         // GOTOnn (nn = 01-99, number of a valid level)

@@ -127,6 +127,10 @@ const Util = {
         return inside;
     },
 
+    pointInBounds(p, bounds) {
+        return (p.x >= bounds.left && p.x <= bounds.right && p.y >= bounds.top && p.y <= bounds.bottom);
+    },
+
     //
     // Map-related
     //

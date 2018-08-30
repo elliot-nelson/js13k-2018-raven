@@ -24,6 +24,19 @@ class Player {
             return;
         }
 
+        if (game.levelComplete) {
+            let target = {
+                x: (game.level.exitBounds.left + game.level.exitBounds.right) / 2,
+                y: (game.level.exitBounds.top + game.level.exitBounds.bottom) / 2
+            };
+            let angle = Util.atanPoints(this, target);
+            this.vx = Util.cos(angle) * this.maxSpeed / 2;
+            this.vy = Util.sin(angle) * this.maxSpeed / 2;
+            this.x += this.vx * delta;
+            this.y += this.vy * delta;
+            return;
+        }
+
         if (game.input.up) {
             this.vy -= this.accel * delta;
             if (this.vy < -this.maxSpeed) {
