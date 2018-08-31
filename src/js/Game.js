@@ -44,7 +44,6 @@ class Game {
 
         this.framems = 0;
         this.enemies = [];
-        this.particles = [];
         this.framehistory = [];
 
         this.crosshair = { x: 0, y: 0 };
@@ -191,9 +190,6 @@ class Game {
             this.enemies.forEach(enemy => enemy.update(delta));
             this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
 
-            this.particles.forEach(particle => particle.update(delta));
-            this.particles = this.particles.filter(particle => particle.state !== 'dead');
-
             if (!this.player.dead) {
                 this.enemies.forEach(enemy => {
                     if (Util.pointNearPoint(enemy, this.player, enemy.killRadius)) {
@@ -256,7 +252,6 @@ class Game {
             this.player.render();
             this.enemies.forEach(enemy => enemy.render());
             this.doors.forEach(door => door.render());
-            this.particles.forEach(particle => particle.render());
 
             // Light cone
             /*var cone1 = xyd(this.player, dw(this.facing - 30), 50);

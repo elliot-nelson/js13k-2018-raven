@@ -21,8 +21,6 @@ class Enemy {
         this.killRadius = 14;
 
         this.state = 'asleep';
-
-        this.nextFrozenParticle = 0;
     }
 
     update(delta) {
