@@ -44,7 +44,6 @@ class Game {
 
         this.framems = 0;
         this.enemies = [];
-        this.framehistory = [];
 
         this.crosshair = { x: 0, y: 0 };
         this.mouse = { x: 0, y: 0 };
@@ -171,18 +170,18 @@ class Game {
 
             this.vision = [];
             if (!this.player.dead) {
-                this.vision = this.vision.concat(this.calculateVisibility(this.player, this.facing, this.fov, 4, 5));
+                this.vision = this.vision.concat(Util.getVisCone(this.player, this.facing, this.fov, 4, 5));
             }
             this.cameras.forEach(camera => {
                 if (camera.enabled) {
-                    this.vision = this.vision.concat(this.calculateVisibility(camera, camera.facing, camera.fov, 12, 0));
+                    this.vision = this.vision.concat(Util.getVisCone(camera, camera.facing, camera.fov, 12, 0));
                 }
             });
             if (Util.pointInBounds(this.player, this.level.enterBounds)) {
-                this.vision.push(this.getVisibilityPolygonForBounds(this.level.enterBounds));
+                this.vision.push(Util.getVisBounds(this.level.enterBounds));
             }
             if (Util.pointInBounds(this.player, this.level.exitBounds)) {
-                this.vision.push(this.getVisibilityPolygonForBounds(this.level.exitBounds));
+                this.vision.push(Util.getVisBounds(this.level.exitBounds));
             }
 
             this.buildAttackGrid();
@@ -266,8 +265,9 @@ class Game {
             this.ctx.stroke();
             this.ctx.restore();*/
 
-            // los edges
-            let losEdges = this.losEdges;
+            // Uncomment this block to draw dashed yellow lines along the various
+            // visibility edges.
+            /*let losEdges = this.losEdges;
             this.doors.forEach(door => losEdges = losEdges.concat(door.getLosEdges()));
             losEdges.forEach(edge => {
                 this.ctx.save();
@@ -279,7 +279,7 @@ class Game {
                 this.ctx.lineTo(this.offset.x + edge.p2.x, this.offset.y + edge.p2.y);
                 this.ctx.stroke();
                 this.ctx.restore();
-            });
+            });*/
 
             if (this.player.dead) {
                 this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -401,18 +401,6 @@ class Game {
     frame(nextms) {
         let delta = nextms - this.framems;
         this.framems = nextms;
-
-        this.framehistory.splice(10);
-        this.framehistory.unshift(delta);
-
-        var x = 0;
-        for(let i = 0; i < this.framehistory.length; i++) {
-            x += this.framehistory[i];
-        }
-        if (x > 0) {
-            //console.log(1000 / (x / 10));
-        }
-
 
         // Gut check - absorb random lag spike / frame jumps
         // (The expected delta is 1000/60 = ~16.67ms.)
@@ -616,13 +604,12 @@ class Game {
         // saving even more space), and add the noise in when we render the level.
         //let seeded = Util.Alea(seed);
         //let rand = () => Math.floor(seeded() * 256);
-        let rand = () => Math.floor(Math.random() * 256);
         let r,g,b,a,w;
         for (let i = 1; i < 31; i++) {
             for(let j = 1; j < 31; j++) {
-                if (rand() > 140) {
-                    r = g = b = rand()
-                    a = Math.floor(Math.random() * 0.2 * 100) / 100
+                if (Util.rf(100) > 40) {
+                    r = g = b = Util.rf(256);
+                    a = Util.rf(0.2 * 100) / 100;
                     w = 1;
                     this.tileCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
                     this.tileCtx.fillRect(x + j, y + i, w, 1);
@@ -741,148 +728,6 @@ class Game {
         });
     }
 
-    pointInBounds(p, bounds) {
-        var fudge = 1;
-        var a = bounds.p1.x,
-            b = bounds.p2.x,
-            c = bounds.p1.y,
-            d = bounds.p2.y;
-        if (a > b) [a, b] = [b, a];
-        if (c > d) [c, d] = [d, c];
-        return p.x >= a - fudge && p.x <= b + fudge && p.y >= c - fudge && p.y <= d + fudge;
-    }
-
-    // Math wizards everywhere, avert your eyes...
-    // https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/
-    // Intersecting lines...
-    // First, given (x1,y1)->(x2,y2), Ax+By=C.
-            // A = y2-y1
-            // B = x1-x2
-            // C = Ax1+By1
-    intersection(line1, line2) {
-        var A1 = line1.p2.y - line1.p1.y;
-        var B1 = line1.p1.x - line1.p2.x;
-        var C1 = A1 * line1.p1.x + B1 * line1.p1.y;
-
-        var A2 = line2.p2.y - line2.p1.y;
-        var B2 = line2.p1.x - line2.p2.x;
-        var C2 = A2 * line2.p1.x + B2 * line2.p1.y;
-
-        var det = A1*B2 - A2*B1;
-
-        if (det !== 0) {
-            var p = {
-                x: (B2*C1 - B1*C2)/det,
-                y: (A1*C2 - A2*C1)/det
-            };
-
-            if (this.pointInBounds(p, line1) && this.pointInBounds(p, line2)) {
-                return p;
-            }
-        }
-    }
-
-    calculateVisibility(origin, facing, coneAngle, offset, backwalk) {
-        // Get pre-calculated visibility edges
-        let edges = this.losEdges;
-
-        // Add in dynamic visibility edges
-        this.doors.forEach(door => edges = edges.concat(door.getLosEdges()));
-
-        let startAngle = dw(facing - coneAngle / 2);
-        let endAngle = dw(facing + coneAngle / 2);
-
-        if (endAngle < startAngle) endAngle += 360;
-
-        // How much space between the "origin point" and the arc of vision? Imagine
-        // for example, a security camera (the arc of vision starts at the lens,
-        // not the base of the camera).
-        offset = offset || 0;
-
-        // Backwalk - how many pixels to walk "backwards" before casting rays. Sometimes
-        // you need some pixels of backwalk to prevent the arc of vision from being
-        // too far in front of the subject (mostly it just doesn't look good).
-        backwalk = backwalk || 0;
-
-        // Calculate a new temporary origin point, with backwalk taken into account.
-        origin = {
-            x: origin.x - Math.cos(Util.d2r(facing)) * backwalk,
-            y: origin.y - Math.sin(Util.d2r(facing)) * backwalk
-        };
-
-        // Gap between rays cast. More of an art than a science... a higher gap is faster,
-        // but potentially introduces artifacts at corners.
-        let sweep = 0.8;
-
-        // Shadows actually seem a little unnatural if they are super crisp. Introduce
-        // just enough jitter that the user won't see a sharp unmoving line for more
-        // than ~1sec.
-        let jitter = (game.framems % 1000) / 1000;
-
-        let frontSweep = [];
-        let backSweep = [];
-
-        let angle = startAngle + jitter;
-        while (angle < endAngle) {
-            // Calculate a source, taking the offset into account
-            let source = {
-                x: origin.x + Math.cos(Util.d2r(angle)) * offset,
-                y: origin.y + Math.sin(Util.d2r(angle)) * offset
-            };
-
-            // Calculate the ray endpoint
-            let ray = {
-                x: origin.x + Math.cos(Util.d2r(angle)) * 1000,
-                y: origin.y + Math.sin(Util.d2r(angle)) * 1000
-            };
-
-            // Loop through all known LOS edges, and when we intersect one, shorten
-            // the current ray. TODO: This is a potential area of improvement (edge
-            // culling, early exits, etc.).
-            for (let j = 0; j < edges.length; j++) {
-                let inter = this.intersection({ p1: source, p2: ray }, edges[j]);
-                if (inter) {
-                    ray = inter;
-                }
-            }
-
-            // In theory, this is where we would keep an array of vision polygons,
-            // each one being:
-            //
-            //     [lastSource, source, ray, lastRay]
-            //
-            // (If offset=0, then we could further optimize and just save the vision
-            // polygons as triangles, but using triangles when source changes for each
-            // ray results in ugly lines near the player.)
-            //
-            // Rather than keep polygons at all, though, we can just "sweep" forwards
-            // for each point far from the player (the ray) and "sweep" backwards for
-            // each point near the player (the source). Concatenating all these points
-            // together then produces a single polygon representing the entire field of
-            // vision, which we can draw in a single fill call.
-            //
-            // Note order is important: we need the final polygons to be stored with
-            // edges "clockwise" (in this case, we are optimizing for enemy pathing, which
-            // means we want NON-VISIBLE on the left and VISIBLE on the right).
-            frontSweep.unshift(ray);
-            backSweep.push(source);
-
-            angle += sweep;
-        }
-
-        let polygon = backSweep.concat(frontSweep);
-        return [polygon];
-    }
-
-    getVisibilityPolygonForBounds(bounds) {
-        let polygon = [
-            { x: bounds.left, y: bounds.top },
-            { x: bounds.right, y: bounds.top },
-            { x: bounds.right, y: bounds.bottom },
-            { x: bounds.left, y: bounds.bottom }
-        ];
-        return polygon;
-    }
 
     handleCheatCodes() {
         // GOTOnn (nn = 01-99, number of a valid level)

@@ -1,6 +1,6 @@
 const Util = {
     //
-    // Angles
+    // Various math helpers
     //
 
     atan(y, x) {
@@ -22,18 +22,22 @@ const Util = {
         return (Util.atanEdge(edge) + 90) % 360;
     },
 
+    // cos (degrees)
     cos(d) {
         return Math.cos(Util.d2r(d));
     },
 
+    // sin (degrees)
     sin(d) {
         return Math.sin(Util.d2r(d));
     },
 
+    // radians to degrees
     r2d(r) {
         return Math.floor(r * 3600 / Math.PI / 2) / 10;
     },
 
+    // degrees 2 radians
     d2r(d) {
         return d * Math.PI * 2 / 360;
     },
@@ -41,6 +45,11 @@ const Util = {
     // Return true if given angle is "between" (clockwise) two other angles
     angleWithin(angle, b1, b2) {
         return dw(angle - b1) < dw(b2 - b1);
+    },
+
+    // rand floor
+    rf(x) {
+        return Math.floor(Math.random() * x);
     },
 
     //
@@ -129,6 +138,151 @@ const Util = {
 
     pointInBounds(p, bounds) {
         return (p.x >= bounds.left && p.x <= bounds.right && p.y >= bounds.top && p.y <= bounds.bottom);
+    },
+
+    // Calculating visibility
+
+    pointInBounds2(p, bounds) {
+        var fudge = 1;
+        var a = bounds.p1.x,
+            b = bounds.p2.x,
+            c = bounds.p1.y,
+            d = bounds.p2.y;
+        if (a > b) [a, b] = [b, a];
+        if (c > d) [c, d] = [d, c];
+        return p.x >= a - fudge && p.x <= b + fudge && p.y >= c - fudge && p.y <= d + fudge;
+    },
+
+    // Math wizards everywhere, avert your eyes...
+    // https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/
+    // Intersecting lines...
+    // First, given (x1,y1)->(x2,y2), Ax+By=C.
+            // A = y2-y1
+            // B = x1-x2
+            // C = Ax1+By1
+    intersection(line1, line2) {
+        var A1 = line1.p2.y - line1.p1.y;
+        var B1 = line1.p1.x - line1.p2.x;
+        var C1 = A1 * line1.p1.x + B1 * line1.p1.y;
+
+        var A2 = line2.p2.y - line2.p1.y;
+        var B2 = line2.p1.x - line2.p2.x;
+        var C2 = A2 * line2.p1.x + B2 * line2.p1.y;
+
+        var det = A1*B2 - A2*B1;
+
+        if (det !== 0) {
+            var p = {
+                x: (B2*C1 - B1*C2)/det,
+                y: (A1*C2 - A2*C1)/det
+            };
+
+            if (Util.pointInBounds2(p, line1) && Util.pointInBounds2(p, line2)) {
+                return p;
+            }
+        }
+    },
+
+    getVisCone(origin, facing, coneAngle, offset, backwalk) {
+        // Get pre-calculated visibility edges
+        let edges = game.losEdges;
+
+        // Add in dynamic visibility edges
+        game.doors.forEach(door => edges = edges.concat(door.getLosEdges()));
+
+        let startAngle = dw(facing - coneAngle / 2);
+        let endAngle = dw(facing + coneAngle / 2);
+
+        if (endAngle < startAngle) endAngle += 360;
+
+        // How much space between the "origin point" and the arc of vision? Imagine
+        // for example, a security camera (the arc of vision starts at the lens,
+        // not the base of the camera).
+        offset = offset || 0;
+
+        // Backwalk - how many pixels to walk "backwards" before casting rays. Sometimes
+        // you need some pixels of backwalk to prevent the arc of vision from being
+        // too far in front of the subject (mostly it just doesn't look good).
+        backwalk = backwalk || 0;
+
+        // Calculate a new temporary origin point, with backwalk taken into account.
+        origin = {
+            x: origin.x - Math.cos(Util.d2r(facing)) * backwalk,
+            y: origin.y - Math.sin(Util.d2r(facing)) * backwalk
+        };
+
+        // Gap between rays cast. More of an art than a science... a higher gap is faster,
+        // but potentially introduces artifacts at corners.
+        let sweep = 0.8;
+
+        // Shadows actually seem a little unnatural if they are super crisp. Introduce
+        // just enough jitter that the user won't see a sharp unmoving line for more
+        // than ~1sec.
+        let jitter = (game.framems % 1000) / 1000;
+
+        let frontSweep = [];
+        let backSweep = [];
+
+        let angle = startAngle + jitter;
+        while (angle < endAngle) {
+            // Calculate a source, taking the offset into account
+            let source = {
+                x: origin.x + Math.cos(Util.d2r(angle)) * offset,
+                y: origin.y + Math.sin(Util.d2r(angle)) * offset
+            };
+
+            // Calculate the ray endpoint
+            let ray = {
+                x: origin.x + Math.cos(Util.d2r(angle)) * 1000,
+                y: origin.y + Math.sin(Util.d2r(angle)) * 1000
+            };
+
+            // Loop through all known LOS edges, and when we intersect one, shorten
+            // the current ray. TODO: This is a potential area of improvement (edge
+            // culling, early exits, etc.).
+            for (let j = 0; j < edges.length; j++) {
+                let inter = this.intersection({ p1: source, p2: ray }, edges[j]);
+                if (inter) {
+                    ray = inter;
+                }
+            }
+
+            // In theory, this is where we would keep an array of vision polygons,
+            // each one being:
+            //
+            //     [lastSource, source, ray, lastRay]
+            //
+            // (If offset=0, then we could further optimize and just save the vision
+            // polygons as triangles, but using triangles when source changes for each
+            // ray results in ugly lines near the player.)
+            //
+            // Rather than keep polygons at all, though, we can just "sweep" forwards
+            // for each point far from the player (the ray) and "sweep" backwards for
+            // each point near the player (the source). Concatenating all these points
+            // together then produces a single polygon representing the entire field of
+            // vision, which we can draw in a single fill call.
+            //
+            // Note order is important: we need the final polygons to be stored with
+            // edges "clockwise" (in this case, we are optimizing for enemy pathing, which
+            // means we want NON-VISIBLE on the left and VISIBLE on the right).
+            frontSweep.unshift(ray);
+            backSweep.push(source);
+
+            angle += sweep;
+        }
+
+        let polygon = backSweep.concat(frontSweep);
+        return [polygon];
+    },
+
+    getVisBounds(bounds) {
+        let polygon = [
+            { x: bounds.left, y: bounds.top },
+            { x: bounds.right, y: bounds.top },
+            { x: bounds.right, y: bounds.bottom },
+            { x: bounds.left, y: bounds.bottom }
+        ];
+        return polygon;
     },
 
     //

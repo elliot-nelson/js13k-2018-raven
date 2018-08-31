@@ -10,6 +10,7 @@ const uglify = require('gulp-uglify');
 const imagemin = require('gulp-imagemin');
 const cleancss = require('gulp-clean-css');
 const htmlmin = require('gulp-htmlmin');
+const shell = require('gulp-shell');
 
 const levelPacker = require("./level-packer");
 
@@ -50,8 +51,13 @@ gulp.task('build:js', () => {
 
 gulp.task('build', ['build:html', 'build:css', 'build:assets', 'build:js']);
 
+// These two tasks require the advpng and advzip tools which you can download and
+// build from http://www.advancemame.it/download (from js13k resources page).
+gulp.task('zip:pre', shell.task('../advpng -z -4 bin/assets/*.png'));
+gulp.task('zip:post', shell.task('../advzip -z -4 zip/offline.zip'));
+
 gulp.task('zip', () => {
-    gulp.src(['bin/**', '!bin/offline.zip', '!bin/app.js.map'], { base: '.' })
+    gulp.src(['bin/**', '!bin/app.js.map'], { base: '.' })
         .pipe(zip('offline.zip'))
         .pipe(size())
         .pipe(gulp.dest('zip'));

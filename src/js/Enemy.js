@@ -144,28 +144,22 @@ class Enemy {
             // to the statue.
             if (jitter < 300) {
                 [r1, r2, r3, r4, a1, a2] = [
-                    Math.floor(Math.random() * 11) - 5,
-                    Math.floor(Math.random() * 11) - 5,
-                    Math.floor(Math.random() * 7) - 3,
-                    Math.floor(Math.random() * 7) - 3,
+                    Util.rf(11) - 5, Util.rf(11) - 5,
+                    Util.rf(7) - 3, Util.rf(7) - 3,
                     0.4,
                     0.7
                 ];
             } else if (jitter < 600) {
                 [r1, r2, r3, r4, a1, a2] = [
-                    Math.floor(Math.random() * 7) - 3,
-                    Math.floor(Math.random() * 7) - 3,
-                    Math.floor(Math.random() * 5) - 2,
-                    Math.floor(Math.random() * 5) - 2,
+                    Util.rf(7) - 3, Util.rf(7) - 3,
+                    Util.rf(5) - 2, Util.rf(5) - 2,
                     0.3,
                     0.6
                 ];
             } else {
                 [r1, r2, r3, r4, a1, a2] = [
-                    Math.floor(Math.random() * 5) - 2,
-                    Math.floor(Math.random() * 5) - 2,
-                    Math.floor(Math.random() * 3) - 1,
-                    Math.floor(Math.random() * 3) - 1,
+                    Util.rf(5) - 2, Util.rf(5) - 2,
+                    Util.rf(3) - 1, Util.rf(3) - 1,
                     0.1,
                     0.2
                 ];
@@ -184,8 +178,8 @@ class Enemy {
         if (this.state === 'attack') {
             game.ctx.globalAlpha = 0.6;
             for (let i = 0; i < 3; i++) {
-                let dx = Math.floor(Math.random() * 7) - 3;
-                let dy = Math.floor(Math.random() * 7) - 3;
+                let dx = Util.rf(7) - 3;
+                let dy = Util.rf(7) - 3;
                 game.ctx.drawImage(Asset.img.unraven, game.offset.x + this.x - this.width / 2 + dx, game.offset.y + this.y - this.height / 2 + dy);
             }
             game.ctx.globalAlpha = 1;
