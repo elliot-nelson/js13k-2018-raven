@@ -14,25 +14,25 @@ const htmlmin = require('gulp-htmlmin');
 const levelPacker = require("./level-packer");
 
 gulp.task('clean', () => {
-    return del('dist');
+    return del('bin');
 });
 
 gulp.task('build:html', () => {
     gulp.src('src/*.html')
         .pipe(htmlmin())
-        .pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('bin'));
 });
 
 gulp.task('build:css', () => {
     gulp.src('src/css/*.css')
         .pipe(cleancss())
-        .pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('bin'));
 });
 
 gulp.task('build:assets', () => {
     gulp.src(['src/assets/*.png', '!src/assets/meta_*.png'])
         .pipe(imagemin())
-        .pipe(gulp.dest('dist/assets'));
+        .pipe(gulp.dest('bin/assets'));
 });
 
 gulp.task('build:js', () => {
@@ -42,19 +42,19 @@ gulp.task('build:js', () => {
         .pipe(concat('app.js'))
         .pipe(babel())
         .pipe(size())
-        //.pipe(uglify({ toplevel: true }))
+        .pipe(uglify({ toplevel: true }))
         .pipe(size())
         .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('bin'));
 });
 
 gulp.task('build', ['build:html', 'build:css', 'build:assets', 'build:js']);
 
 gulp.task('zip', () => {
-    gulp.src(['dist/**', '!dist/offline.zip', '!dist/app.js.map'], { base: '.' })
+    gulp.src(['bin/**', '!bin/offline.zip', '!bin/app.js.map'], { base: '.' })
         .pipe(zip('offline.zip'))
         .pipe(size())
-        .pipe(gulp.dest('dist'));
+        .pipe(gulp.dest('zip'));
 });
 
 gulp.task('watch', () => {

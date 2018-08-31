@@ -66,7 +66,7 @@ const levelPacker = {
             doors: [],
             width: width,
             height: height,
-            data: terrainLayer.data
+            data: levelPacker.packData(terrainLayer.data)
         };
         let short = filename.match(/\/([^/]*)\.json/)[1];
         Object.assign(level, LevelMetadata[short]);
@@ -176,6 +176,36 @@ const levelPacker = {
             data: data,
             objects: objects
         });
+    },
+    /**
+     * Smash up data as small as possible. Assumes that we have a max of EIGHT possible
+     * tiles, freeing up remaining bits for length vars.
+     */
+    packData(data) {
+        let result = [];
+
+        let a = data[0], l = 1;
+        for (let i = 1; i < data.length; i++) {
+            b = data[i];
+
+            if (a > 7) throw new Error("cannot pack level: byte>7");
+
+            if (b === a && l < 7) {
+                l++;
+                continue;
+            }
+
+            // Yes, this is kind of unorthodox, it would make the most sense to pack into
+            // bits, like `((l<<3)+a)`, and then perhaps convert the binary string into
+            // a Base64 string and read it. In this case I'm optimizing for simplicity/least
+            // code in the level reading logic.
+            result.push(String.fromCharCode(35 + (l - 1) * 8 + a));
+            a = b;
+            l = 1;
+        }
+        result.push(String.fromCharCode(35 + (l - 1) * 8 + a));
+
+        return result.join('');
     }
 };
 

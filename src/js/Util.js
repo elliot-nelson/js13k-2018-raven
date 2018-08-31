@@ -169,7 +169,7 @@ const Util = {
         }
     },
 
-
+/*
     // Random number generator.
     // https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
     Alea(seed) {
@@ -194,7 +194,7 @@ const Util = {
             };
         }();
     },
-
+*/
     renderTogglePrompt(x, y) {
         let radius = (game.framems % 1000 < 500 ? 4 : 6);
         game.ctx.fillStyle = 'rgba(204, 204, 204, 168)';

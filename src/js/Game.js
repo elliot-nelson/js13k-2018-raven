@@ -186,15 +186,13 @@ class Game {
                 this.vision.push(this.getVisibilityPolygonForBounds(this.level.exitBounds));
             }
 
-            //this.updatePathRoutes();
+            this.buildAttackGrid();
 
             this.enemies.forEach(enemy => enemy.update(delta));
             this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
 
             this.particles.forEach(particle => particle.update(delta));
             this.particles = this.particles.filter(particle => particle.state !== 'dead');
-
-            this.buildAttackGraph2();
 
             if (!this.player.dead) {
                 this.enemies.forEach(enemy => {
@@ -373,7 +371,6 @@ class Game {
                 this.renderLevelText();
             }
 
-            this.buildAttackGraph();
             this.showAttackGraph2();
         }
 
@@ -529,7 +526,7 @@ class Game {
     load(levelIndex) {
         this.levelIndex = levelIndex;
         this.level = Object.assign({}, LevelCache[levelIndex]);
-        this.level.data = this.level.data.slice(0);
+        this.level.data = this.unpackData(this.level.data);
         this.levelComplete = false;
 
         let eb = this.level.enterBounds;
@@ -606,21 +603,34 @@ class Game {
         this.renderPrep = false;
     }
 
+    unpackData(data) {
+        let result = [], v, c, l;
+        for (let i = 0; i < data.length; i++) {
+            v = data.charCodeAt(i) - 35;
+            c = v % 8;
+            l = (v - c) / 8 + 1;
+            for (let j = 0; j < l; j++) result.push(c);
+        }
+        return result;
+    }
+
     renderTileNoise(seed, x, y) {
         // Adding some noise makes most tiles look much more natural (easier on
         // the eyes), but it also explodes PNG size by an order of magnitude. Cheat
         // by saving the PNGs as mostly-solid-color (also allows us to index colors,
         // saving even more space), and add the noise in when we render the level.
-        let seeded = Util.Alea(seed);
-        let rand = () => Math.floor(seeded() * 256);
-        let r,g,b,a;
+        //let seeded = Util.Alea(seed);
+        //let rand = () => Math.floor(seeded() * 256);
+        let rand = () => Math.floor(Math.random() * 256);
+        let r,g,b,a,w;
         for (let i = 1; i < 31; i++) {
             for(let j = 1; j < 31; j++) {
-                if (rand() > 172) {
-                    [r, g, b] = [rand(), rand(), rand()];
-                    a = 0.09;
+                if (rand() > 140) {
+                    r = g = b = rand()
+                    a = Math.floor(Math.random() * 0.2 * 100) / 100
+                    w = 1;
                     this.tileCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
-                    this.tileCtx.fillRect(x + j, y + i, 1, 1);
+                    this.tileCtx.fillRect(x + j, y + i, w, 1);
                 }
             }
         }
@@ -894,7 +904,7 @@ class Game {
             this.input.queue = [];
         }
     }
-
+/*
     buildAttackGraph() {
         return;
 
@@ -991,7 +1001,7 @@ class Game {
                         { p1: cuttingEdge.p2, p2: closestEdge.p2 },
                         { p1: closestEdge.p2, p2: edge.p2 }
                     ]));
-                    */
+
                 }
             } else {
                 paths.push(path);
@@ -1037,7 +1047,7 @@ class Game {
 
         enemy.attackPath = paths[0];
         }
-        /*let grid = {};
+        let grid = {};
         let queue = [];
         let density = 8;
 
@@ -1081,10 +1091,11 @@ class Game {
             }
             this.ctx.fillRect(game.offset.x + v.x, game.offset.y + v.y, 1, 1);
         }
-        console.log([keys.length, maxValue]);*/
+        console.log([keys.length, maxValue]);
     }
+    */
 
-    buildAttackGraph2() {
+    buildAttackGrid() {
         let target = {
             x: game.player.x - Util.cos(game.facing) * 34,
             y: game.player.y - Util.sin(game.facing) * 34,
