@@ -166,7 +166,7 @@ class Game {
                 this.crosshair.y = bound.bottom;
             }
 
-            this.facing = r2d(Math.atan2(this.crosshair.y - this.player.y, this.crosshair.x - this.player.x));
+            this.facing = Util.atanPoints(this.player, this.crosshair);
 
             this.vision = [];
             if (!this.player.dead) {
@@ -366,7 +366,7 @@ class Game {
                 this.renderLevelText();
             }
 
-            this.showAttackGraph2();
+            //this.showAttackGraph2();
         }
 
         if (this.intro && !this.menu) {
@@ -515,8 +515,8 @@ class Game {
         let eb = this.level.enterBounds;
 
         this.player = new Player();
-        this.player.x = (eb.right - eb.left) / 2 + eb.left;
-        this.player.y = (eb.bottom - eb.top) / 2 + eb.top;
+        this.player.x = (eb.p1.x + eb.p2.x) / 2;
+        this.player.y = (eb.p1.y + eb.p2.y) / 2;
         this.crosshair.x = this.player.x;
         this.crosshair.y = this.player.y - 32;
 
@@ -986,6 +986,7 @@ class Game {
         this.attackGrid = grid;
     }
 
+    /*
     showAttackGraph2() {
         return;
         for (let i = 0; i < this.level.height; i++) {
@@ -1006,4 +1007,5 @@ class Game {
             }
         }
     }
+    */
 };

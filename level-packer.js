@@ -140,8 +140,14 @@ const levelPacker = {
             }
         }
 
-        level.enterBounds = enterBounds;
-        level.exitBounds = exitBounds;
+        level.enterBounds = {
+            p1: { x: enterBounds.left, y: enterBounds.top },
+            p2: { x: enterBounds.right, y: enterBounds.bottom }
+        };
+        level.exitBounds = {
+            p1: { x: exitBounds.left, y: exitBounds.top },
+            p2: { x: exitBounds.right, y: exitBounds.bottom }
+        };
 
         return level;
     },

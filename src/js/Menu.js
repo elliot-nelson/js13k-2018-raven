@@ -4,7 +4,6 @@ class Menu {
         this.escapeHandler = escapeHandler;
 
         this.selected = 0;
-        this.entryHeight = 36;
     }
 
     open() {
@@ -18,10 +17,12 @@ class Menu {
     }
 
     render() {
+        let entryHeight = 36;
+
         game.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         game.ctx.fillRect(0, 0, game.canvas.width, game.canvas.height);
 
-        let menuTop = game.canvas.height / 2 - this.options.length * (this.entryHeight * 0.75);
+        let menuTop = game.canvas.height / 2 - this.options.length * (entryHeight * 0.75);
 
         game.ctx.save();
         game.ctx.translate(game.canvas.width / 2, game.canvas.height / 2);
@@ -32,16 +33,16 @@ class Menu {
         this.options.forEach((entry, idx) => {
             game.ctx.font = Asset.getFontString(18);
 
-            entry.width = game.ctx.measureText(entry.text).width;
-            entry.left = game.canvas.width / 2 - entry.width / 2;
-            entry.bottom = menuTop + idx * this.entryHeight;
+            entry.w = game.ctx.measureText(entry.text).width;
+            entry.x = game.canvas.width / 2 - entry.w / 2;
+            entry.y = menuTop + idx * entryHeight;
 
             if (idx === this.selected && this.scale === 0) {
                 game.ctx.fillStyle = 'rgba(255, 255, 255, 1)';
             } else {
                 game.ctx.fillStyle = 'rgba(204, 204, 204, 1)';
             }
-            game.ctx.fillText(entry.text, entry.left, entry.bottom);
+            game.ctx.fillText(entry.text, entry.x, entry.y);
         });
 
         game.ctx.restore();

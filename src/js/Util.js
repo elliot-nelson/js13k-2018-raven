@@ -136,22 +136,16 @@ const Util = {
         return inside;
     },
 
-    pointInBounds(p, bounds) {
-        return (p.x >= bounds.left && p.x <= bounds.right && p.y >= bounds.top && p.y <= bounds.bottom);
-    },
-
-    // Calculating visibility
-
-    pointInBounds2(p, bounds) {
-        var fudge = 1;
-        var a = bounds.p1.x,
-            b = bounds.p2.x,
-            c = bounds.p1.y,
-            d = bounds.p2.y;
+    pointInBounds(p, bounds, fudge) {
+        fudge = fudge || 0;
+        let a = bounds.p1.x, b = bounds.p2.x, c = bounds.p1.y, d = bounds.p2.y;
         if (a > b) [a, b] = [b, a];
         if (c > d) [c, d] = [d, c];
         return p.x >= a - fudge && p.x <= b + fudge && p.y >= c - fudge && p.y <= d + fudge;
     },
+
+    // Calculating visibility
+
 
     // Math wizards everywhere, avert your eyes...
     // https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/
@@ -177,7 +171,7 @@ const Util = {
                 y: (A1*C2 - A2*C1)/det
             };
 
-            if (Util.pointInBounds2(p, line1) && Util.pointInBounds2(p, line2)) {
+            if (Util.pointInBounds(p, line1, 1) && Util.pointInBounds(p, line2, 1)) {
                 return p;
             }
         }
@@ -220,8 +214,7 @@ const Util = {
         // than ~1sec.
         let jitter = (game.framems % 1000) / 1000;
 
-        let frontSweep = [];
-        let backSweep = [];
+        let polygon = [];
 
         let angle = startAngle + jitter;
         while (angle < endAngle) {
@@ -265,24 +258,22 @@ const Util = {
             // Note order is important: we need the final polygons to be stored with
             // edges "clockwise" (in this case, we are optimizing for enemy pathing, which
             // means we want NON-VISIBLE on the left and VISIBLE on the right).
-            frontSweep.unshift(ray);
-            backSweep.push(source);
+            polygon.unshift(ray);
+            polygon.push(source);
 
             angle += sweep;
         }
 
-        let polygon = backSweep.concat(frontSweep);
         return [polygon];
     },
 
     getVisBounds(bounds) {
-        let polygon = [
-            { x: bounds.left, y: bounds.top },
-            { x: bounds.right, y: bounds.top },
-            { x: bounds.right, y: bounds.bottom },
-            { x: bounds.left, y: bounds.bottom }
+        return [
+            { x: bounds.p1.x, y: bounds.p1.y },
+            { x: bounds.p2.x, y: bounds.p1.y },
+            { x: bounds.p2.x, y: bounds.p2.y },
+            { x: bounds.p1.x, y: bounds.p2.y }
         ];
-        return polygon;
     },
 
     //

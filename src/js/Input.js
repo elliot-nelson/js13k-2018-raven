@@ -1,22 +1,4 @@
 
-function distance(p1, p2) {
-    return Math.sqrt(distfast(p1, p2));
-}
-
-function distfast(p1, p2) {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    return dx * dx + dy * dy;
-}
-
-function r2d(r) {
-    return Math.floor(r * 3600 / Math.PI / 2) / 10;
-}
-
-function d2r(d) {
-    return d * Math.PI * 2 / 360;
-}
-
 function dw(d) {
     return (d + 720) % 360;
 }

@@ -26,8 +26,8 @@ class Player {
 
         if (game.levelComplete) {
             let target = {
-                x: (game.level.exitBounds.left + game.level.exitBounds.right) / 2,
-                y: (game.level.exitBounds.top + game.level.exitBounds.bottom) / 2
+                x: (game.level.exitBounds.p1.x + game.level.exitBounds.p2.x) / 2,
+                y: (game.level.exitBounds.p1.y + game.level.exitBounds.p2.y) / 2
             };
             let angle = Util.atanPoints(this, target);
             this.vx = Util.cos(angle) * this.maxSpeed / 2;
