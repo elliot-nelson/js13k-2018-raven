@@ -36,6 +36,8 @@ class Game {
             }
         }).init();
 
+        this.audio = new Audio();
+
         this.level = undefined;
         this.intro = undefined;
         this.player = undefined;
@@ -77,8 +79,7 @@ class Game {
                 {
                     text: 'START',
                     handler: () => {
-                        this.pendingLevelIndex = 2;
-                        console.log("set " + this.pendingLevelIndex);
+                        this.pendingLevelIndex = 0;
                         this.unpause();
                     }
                 }
@@ -114,6 +115,8 @@ class Game {
             this.load(this.pendingLevelIndex);
             this.pendingLevelIndex = undefined;
         }
+
+        this.audio.update();
 
         if (this.menu) {
             this.menu.update(delta);
@@ -247,9 +250,9 @@ class Game {
             }*/
 
             this.terminals.forEach(terminal => terminal.render());
-            this.cameras.forEach(camera => camera.render());
-            this.player.render();
             this.enemies.forEach(enemy => enemy.render());
+            this.player.render();
+            this.cameras.forEach(camera => camera.render());
             this.doors.forEach(door => door.render());
 
             // Light cone

@@ -8,6 +8,8 @@ class Camera {
         this.enabled = !!cameraData.enabled;
         this.fov = 60;
 
+        // camera head = 21x12
+
         this.determineArmPlacement();
 
         this.toggled = undefined;
@@ -35,7 +37,7 @@ class Camera {
         game.ctx.save();
         game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
         game.ctx.rotate(Util.d2r(this.facing));
-        game.ctx.drawImage(Asset.img.camera_head, -2, -5);
+        game.ctx.drawImage(Asset.img.camera_head, -6, -5);
         game.ctx.restore();
     }
 
@@ -46,18 +48,18 @@ class Camera {
     determineArmPlacement() {
         if (Util.wallAtUV(this.u, this.v - 1)) {
             this.armFacing = 0;
-            this.x = this.u * 32 + 16;
+            this.x = this.u * 32 + 15;
             this.y = this.v * 32 + 11;
         } else if (Util.wallAtUV(this.u - 1, this.v)) {
-            this.armFacing = 90;
+            this.armFacing = 270;
             this.x = this.u * 32 + 11;
             this.y = this.v * 32 + 16;
         } else if (Util.wallAtUV(this.u, this.v + 1)) {
             this.armFacing = 180;
-            this.x = this.u * 32 + 16;
+            this.x = this.u * 32 + 15;
             this.y = this.v * 32 + 20;
         } else {
-            this.armFacing = 270;
+            this.armFacing = 90;
             this.x = this.u * 32 + 20;
             this.y = this.v * 32 + 16;
         }

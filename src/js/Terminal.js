@@ -6,6 +6,8 @@ class Terminal {
         this.x = this.u * 32 + 16;
         this.y = this.v * 32 + 16;
 
+        // 26x19
+
         this.determinePlacement();
 
         this.toggleRadius = 16;
@@ -29,7 +31,7 @@ class Terminal {
         game.ctx.save();
         game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
         game.ctx.rotate(Util.d2r(this.facing));
-        game.ctx.drawImage(Asset.img.terminal, -16, -16);
+        game.ctx.drawImage(Asset.img.terminal, -13, -16);
         game.ctx.restore();
     }
 

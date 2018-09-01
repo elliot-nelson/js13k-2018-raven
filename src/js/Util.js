@@ -296,6 +296,8 @@ const Util = {
         return Util.wallAtUV(Math.floor(x / 32), Math.floor(y / 32));
     },
 
+    // instead of wallAtXY, blockedAtXY? take terminal into account here
+
     boundEntityWall(entity) {
         if (Util.wallAtXY(entity.x - entity.width / 2, entity.y)) {
             entity.x += 32 - ((entity.x - entity.width / 2) % 32);
