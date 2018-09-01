@@ -5,11 +5,11 @@ class Camera {
 
         this.control = cameraData.control;
         this.facing = parseFloat(cameraData.facing);
+        this.enabled = !!cameraData.enabled;
         this.fov = 60;
 
         this.determineArmPlacement();
 
-        this.enabled = true;
         this.toggled = undefined;
     }
 
@@ -18,7 +18,7 @@ class Camera {
             this.enabled = !this.enabled;
         }
 
-        this.facing = dw(this.facing + 1);
+        //this.facing = dw(this.facing + 1);
 
         this.toggled = undefined;
     }

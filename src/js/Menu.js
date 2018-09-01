@@ -27,7 +27,7 @@ class Menu {
         game.ctx.save();
         game.ctx.translate(game.canvas.width / 2, game.canvas.height / 2);
         game.ctx.scale(1 + this.scale, 1 + this.scale);
-        game.ctx.rotate(d2r(this.rotate));
+        game.ctx.rotate(Util.d2r(this.rotate));
         game.ctx.translate(-game.canvas.width / 2, -game.canvas.height / 2);
 
         this.options.forEach((entry, idx) => {

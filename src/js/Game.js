@@ -224,7 +224,7 @@ class Game {
             if (this.player.dead) {
                 let scale = Math.min(3, 1 + this.deathFrame / 50);
                 this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-                this.ctx.rotate(d2r(this.deathFrame / 5));
+                this.ctx.rotate(Util.d2r(this.deathFrame / 5));
                 this.ctx.scale(scale, scale);
                 this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
             }
@@ -517,8 +517,8 @@ class Game {
         this.player = new Player();
         this.player.x = (eb.p1.x + eb.p2.x) / 2;
         this.player.y = (eb.p1.y + eb.p2.y) / 2;
-        this.crosshair.x = this.player.x;
-        this.crosshair.y = this.player.y - 32;
+        this.crosshair.x = this.player.x + (this.level.chx || 0);
+        this.crosshair.y = this.player.y + (this.level.chy || -32);
 
         this.polygonize(this.level);
 

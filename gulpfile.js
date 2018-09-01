@@ -67,7 +67,10 @@ gulp.task('watch', () => {
     gulp.watch('src/*.html', ['build:html']);
     gulp.watch('src/css/*.css', ['build:css']);
     gulp.watch('src/assets/*', ['build:assets']);
+
     gulp.watch('src/js/*.js', ['build:js']);
+    gulp.watch('src/levels/*', ['build:js']);
+    gulp.watch('*.js', ['build:js']);
 });
 
 gulp.task('default', ['build', 'watch']);
