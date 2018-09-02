@@ -195,7 +195,7 @@ class Game {
             if (!this.player.dead) {
                 this.enemies.forEach(enemy => {
                     if (Util.pointNearPoint(enemy, this.player, enemy.killRadius)) {
-                        this.playerDied();
+                        if (!this.godmode) this.playerDied();
                     }
                 });
 
@@ -270,19 +270,19 @@ class Game {
 
             // Uncomment this block to draw dashed yellow lines along the various
             // visibility edges.
-            /*let losEdges = this.losEdges;
+            let losEdges = this.losEdges;
             this.doors.forEach(door => losEdges = losEdges.concat(door.getLosEdges()));
             losEdges.forEach(edge => {
                 this.ctx.save();
                 this.ctx.globalAlpha = 0.9;
-                this.ctx.strokeStyle = 'yellow';
+                this.ctx.strokeStyle = 'red';
                 this.ctx.setLineDash([4, 2]);
                 this.ctx.beginPath();
                 this.ctx.moveTo(this.offset.x + edge.p1.x, this.offset.y + edge.p1.y);
                 this.ctx.lineTo(this.offset.x + edge.p2.x, this.offset.y + edge.p2.y);
                 this.ctx.stroke();
                 this.ctx.restore();
-            });*/
+            });
 
             if (this.player.dead) {
                 this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -745,6 +745,14 @@ class Game {
                 this.pendingLevelIndex = undefined;
             }
             this.input.queue = [];
+        } else if (this.input.queue[0] === 'd' &&
+                   this.input.queue[1] === 'q' &&
+                   this.input.queue[2] === 'd' &&
+                   this.input.queue[3] === 'd' &&
+                   this.input.queue[4] === 'i') {
+            this.godmode = !this.godmode;
+            this.input.queue = [];
+            console.log("god mode: " + this.godmode);
         }
     }
 /*
