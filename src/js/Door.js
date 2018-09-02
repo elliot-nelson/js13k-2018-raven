@@ -44,12 +44,6 @@ class Door {
     render() {
         let slide = Math.floor(this.slide);
 
-        // TODO: This "sloppy flip" - rotating about the center of the tile by
-        // 180 degrees - results in a shitty looking second door, which is off by
-        // 1 pixel from its matching door. The result isn't very visible right now
-        // because the shadows cover it up, so I'm leaving it. Ideally, we should do
-        // a true horizontal flip.
-
         // TODO: For now, "vertical" doors are not implemented, because I needed to cut
         // a couple hundred extra bytes :(.
 

@@ -38,6 +38,8 @@ class Camera {
         game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
         game.ctx.rotate(Util.d2r(this.facing));
         game.ctx.drawImage(Asset.img.camera_head, -6, -5);
+        game.ctx.fillStyle = this.enabled ? 'rgba(36, 204, 36, 0.8)' : 'rgba(204, 36, 36, 0.8)';
+        game.ctx.fillRect(0, -1, 3, 3);
         game.ctx.restore();
     }
 
