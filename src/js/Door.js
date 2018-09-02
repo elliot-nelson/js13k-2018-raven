@@ -4,13 +4,13 @@ class Door {
         this.v = doorData.v;
         this.type = doorData.type;
 
-        if (this.type === 'h') {
+        //if (this.type === 'h') {
             this.x = this.u * 32 + 32;
             this.y = this.v * 32 + 16;
-        } else {
-            this.x = this.u * 32 + 16;
-            this.y = this.v * 32 + 32;
-        }
+        //} else {
+        //    this.x = this.u * 32 + 16;
+        //    this.y = this.v * 32 + 32;
+        //}
 
         // Select a radius just big enough to include our traditional
         // "elevator start position" (we want the effect of the doors
@@ -44,21 +44,31 @@ class Door {
     render() {
         let slide = Math.floor(this.slide);
 
-        if (this.type === 'h') {
-            // Left half
-            game.ctx.save();
-            game.ctx.translate(game.offset.x + this.x - 16, game.offset.y + this.y);
-            game.ctx.rotate(Util.d2r(0));
-            game.ctx.drawImage(Asset.tile.door, slide, 0, 32 - slide, 32, -16, -16, 32 - slide, 32);
-            game.ctx.restore();
+        // TODO: This "sloppy flip" - rotating about the center of the tile by
+        // 180 degrees - results in a shitty looking second door, which is off by
+        // 1 pixel from its matching door. The result isn't very visible right now
+        // because the shadows cover it up, so I'm leaving it. Ideally, we should do
+        // a true horizontal flip.
 
-            // Right half
+        // TODO: For now, "vertical" doors are not implemented, because I needed to cut
+        // a couple hundred extra bytes :(.
+
+        //if (this.type === 'h') {
             game.ctx.save();
-            game.ctx.translate(game.offset.x + this.x + 16, game.offset.y + this.y);
+            game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
+            game.ctx.drawImage(Asset.tile.door, slide, 0, 32 - slide, 32, -32, -16, 32 - slide, 32);
             game.ctx.rotate(Util.d2r(180));
-            game.ctx.drawImage(Asset.tile.door, slide, 0, 32 - slide, 32, -16, -16, 32 - slide, 32);
+            game.ctx.drawImage(Asset.tile.door, slide, 0, 32 - slide, 32, -32, -16, 32 - slide, 32);
             game.ctx.restore();
-        }
+        //} else {
+        //    game.ctx.save();
+        //    game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
+        //    game.ctx.rotate(Util.d2r(90));
+        //    game.ctx.drawImage(Asset.tile.door, slide, 0, 32 - slide, 32, -32, -16, 32 - slide, 32);
+        //    game.ctx.rotate(Util.d2r(270));
+        //    game.ctx.drawImage(Asset.tile.door, slide, 0, 32 - slide, 32, -32, -16, 32 - slide, 32);
+        //    game.ctx.restore();
+        //}
     }
 
     toggle() {
@@ -67,6 +77,9 @@ class Door {
 
     getLosEdges() {
         let cut = game.tileVisibilityInset;
+
+        // TODO: Edges implemented for horizontal doors only; to add vertical doors,
+        // need to add an extra check and rotate these coordinates around.
 
         if (this.slide < 3) {
             return [
