@@ -88,10 +88,15 @@ const levelPacker = {
         for (let i = 0; i < objectsLayer.objects.length; i++) {
             let object = objectsLayer.objects[i];
             if (object.type === "enemy") {
-                level.enemies.push({
+                let enemy = {
                     x: object.x,
                     y: object.y
-                });
+                };
+                if (object.properties) {
+                    if (object.properties.Wake) enemy.wake = object.properties.Wake;
+                    if (object.properties.WakeRadius) enemy.wakeRadius = parseInt(object.properties.WakeRadius, 10);
+                }
+                level.enemies.push(enemy);
             }
             if (object.type === "camera") {
                 level.cameras.push({

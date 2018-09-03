@@ -16,11 +16,13 @@ class Enemy {
         this.width = this.idleWidth;
         this.height = this.idleHeight;
 
-        this.wakeRadius = 384;
-        this.attackRadius = 192;
+        this.wake = enemyData.wake || 'radius';
+        this.wakeRadius = enemyData.wakeRadius || 384;
         this.killRadius = 14;
 
         this.state = 'asleep';
+
+        console.log([this.wake, this.wakeRadius, this.state]);
     }
 
     update(delta) {
@@ -33,7 +35,11 @@ class Enemy {
 
         switch (this.state) {
             case 'asleep':
-                if (Util.distance(this, game.player) < this.wakeRadius) {
+                if (this.wake === 'radius' && Util.distance(this, game.player) < this.wakeRadius) {
+                    // Default - wake when player reaches a certain radius
+                    this.state = 'idle';
+                } else if (this.wake === 'los' && this.sprintToTargetAngle(0, true) !== undefined) {
+                    // Wake when player is visible to the enemy
                     this.state = 'idle';
                 }
                 break;
@@ -242,7 +248,7 @@ class Enemy {
         }
     }
 
-    sprintToTargetAngle(offset) {
+    sprintToTargetAngle(offset, ignoreVision) {
         let shadow = { x: this.x, y: this.y, width: this.width, height: this.height };
         let target = {
             x: game.player.x - Util.cos(game.facing) * offset,
@@ -252,7 +258,7 @@ class Enemy {
         let dx = Util.cos(attackAngle) * 4;
         let dy = Util.sin(attackAngle) * 4;
 
-        while (!Util.entitySpotted(shadow) && !Util.wallAtXY(shadow.x, shadow.y)) {
+        while ((ignoreVision || !Util.entitySpotted(shadow)) && !Util.wallAtXY(shadow.x, shadow.y)) {
             if (Util.distance(shadow, game.player) <= this.killRadius) {
                 return attackAngle;
             }

@@ -85,12 +85,16 @@ class Player {
     }
 
     render() {
+        // By relying on global frame, we're definitely cheating - a more
+        // reliable and visually consistent method is to have real "animation frames",
+        // a walking state and an idle state, etc. All of that is easily doable,
+        // but I'm shaving a few hundred bytes with this approximation.
         let walkImage = [
             'player_l',
             ,
             'player_r',
             ,
-        ][Math.floor((game.framems % 1000) / 250)];
+        ][Math.floor((game.framems % 800) / 200)];
         if (this.vx === 0 && this.vy === 0) walkImage = undefined;
 
         game.ctx.save();
