@@ -20,6 +20,7 @@ class Audio {
         this.tick = 0;
         this.startOffset = this.ctx.currentTime;
         this.tickLength = 1/5;
+        this.dangerLevel = 0;
         this.gain = 0.3;
     }
 
@@ -39,7 +40,6 @@ class Audio {
         }
 
         // Do some basic gain manipulation
-        console.log(delta);
         if (game.menu || game.intro || game.player.dead || game.levelComplete) {
             if (this.gain > 0.4) {
                 this.gain -= delta;
@@ -133,7 +133,7 @@ class Audio {
             o.type = 'triangle';
             o.connect(dest);
             o.start(startOffset + tickLength * tick);
-            o.stop(startOffset + tickLength * tick + tickLength * 1.33);
+            o.stop(startOffset + tickLength * tick + tickLength * 1.4);
         }
     }
 }

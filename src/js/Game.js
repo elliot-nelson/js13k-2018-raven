@@ -182,7 +182,7 @@ class Game {
                 }
             });
             if (!this.player.dead) {
-                this.vision = this.vision.concat(Util.getVisCone(this.player, this.facing, this.fov, 4, 5, 1));
+                this.vision = this.vision.concat(Util.getVisCone(this.player, this.facing, this.fov, 4, 0, 1));
             }
 
             this.buildAttackGrid();
@@ -322,6 +322,7 @@ class Game {
             }
 
             // Post-visibility rendering
+            this.player.render(0.8);
             this.enemies.forEach(enemy => enemy.renderPost());
 
             // Reset all global transforms. Note: do not render anything except "HUD UI"

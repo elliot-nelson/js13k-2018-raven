@@ -19,6 +19,8 @@ const Asset = {
 
     loadAllAssets() {
         Asset.img.player      = Asset.loadImage('assets/player.png');
+        Asset.img.player_l    = Asset.loadImage('assets/player_shoe_left.png');
+        Asset.img.player_r    = Asset.loadImage('assets/player_shoe_right.png');
         Asset.img.raven       = Asset.loadImage('assets/raven.png');
         Asset.img.unraven     = Asset.loadImage('assets/unraven.png');
         Asset.img.camera_arm  = Asset.loadImage('assets/camera_arm.png');

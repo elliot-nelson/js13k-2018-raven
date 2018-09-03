@@ -1,3 +1,6 @@
+/**
+ * The player class encapsulates the player's current state.
+ */
 class Player {
     constructor() {
         this.x = 105;
@@ -82,7 +85,29 @@ class Player {
     }
 
     render() {
-        game.ctx.drawImage(Asset.img.player, game.offset.x + this.x - 3, game.offset.y + this.y - 2);
+        let walkImage = [
+            'player_l',
+            ,
+            'player_r',
+            ,
+        ][Math.floor((game.framems % 1000) / 250)];
+        if (this.vx === 0 && this.vy === 0) walkImage = undefined;
+
+        game.ctx.save();
+        game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
+        game.ctx.rotate(Util.d2r(game.facing + 90));
+        if (walkImage) game.ctx.drawImage(Asset.img[walkImage], -16, -16);
+        game.ctx.drawImage(Asset.img.player, -16, -16);
+        game.ctx.restore();
+    }
+
+    renderPost() {
+        game.ctx.save();
+        game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
+        game.ctx.rotate(Util.d2r(game.facing + 90));
+        game.ctx.globalAlpha = 0.8;
+        game.ctx.drawImage(Asset.img.player, -16, -16);
+        game.ctx.restore();
     }
 
     renderCrosshair() {

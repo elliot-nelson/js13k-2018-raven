@@ -10,14 +10,14 @@ const LevelMetadata = {
         name: 'Security Annex 109A',
         hint: '! Look around with the mouse. Move with W/A/S/D.',
         intro:
-            '[Comm REF 672.A]\n\n' +
+            '[SEC REF 672.A]\n\n' +
             'Site R-7 has suffered a catastrophic breach. All units codenamed "Raven" are considered active ' +
             'and extremely dangerous. All security monitoring is currently offline.\n\n' +
             'When visible to you or our security team, Raven will manifest as statues. Do not turn your back ' +
             'on these statues. Raven\'s true form remains a mystery, but we know it can attack quickly and ' +
             'without warning when not under guard.\n\n' +
             'Your mission is simple: enter the facility, bring our security cameras back online, and ' +
-            'contain all active Raven. Be careful in there.'
+            'contain all active Raven. Ni pukha, ni pyera, comrade.'
     },
     level02: {
         name: 'Security Annex 209A',
@@ -44,7 +44,13 @@ const LevelMetadata = {
     level09: {
         name: 'Badofjfoeof',
         hint: ''
-    }
+    },
+    outro:
+        '[SEC REF 672.C]\n\n' +
+        'Site R-7 is now a code yellow, thanks to your efforts. With all security cameras ' +
+        'back online, secondary cleanup crews will finish the job with little danger. No ' +
+        'Raven have escaped the facility during this operation.\n\n' +
+        'You are cleared to leave. Do svidaniya, comrade...'
 };
 
 module.exports = LevelMetadata;
