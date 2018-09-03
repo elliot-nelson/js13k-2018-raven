@@ -177,7 +177,7 @@ const Util = {
         }
     },
 
-    getVisCone(origin, facing, coneAngle, offset, backwalk) {
+    getVisCone(origin, facing, coneAngle, offset, backwalk, opacity) {
         // Get pre-calculated visibility edges
         let edges = game.losEdges;
 
@@ -212,11 +212,13 @@ const Util = {
         // Shadows actually seem a little unnatural if they are super crisp. Introduce
         // just enough jitter that the user won't see a sharp unmoving line for more
         // than ~1sec.
-        let jitter = (game.framems % 1000) / 1000;
+        //
+        // TODO: jitter is disabled, it doesn't look quite right.
+        //let jitter = (game.framems % 1000) / 1000;
 
         let polygon = [];
 
-        let angle = startAngle + jitter;
+        let angle = startAngle; //+ jitter;
         while (angle < endAngle) {
             // Calculate a source, taking the offset into account
             let source = {
@@ -264,16 +266,19 @@ const Util = {
             angle += sweep;
         }
 
+        polygon.opacity = opacity;
         return [polygon];
     },
 
-    getVisBounds(bounds) {
-        return [
+    getVisBounds(bounds, opacity) {
+        let polygon = [
             { x: bounds.p1.x, y: bounds.p1.y },
             { x: bounds.p2.x, y: bounds.p1.y },
             { x: bounds.p2.x, y: bounds.p2.y },
             { x: bounds.p1.x, y: bounds.p2.y }
         ];
+        polygon.opacity = opacity;
+        return polygon;
     },
 
     //

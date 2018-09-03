@@ -46,11 +46,11 @@ class Terminal {
         if (Util.wallAtUV(this.u, this.v - 1)) {
             this.facing = 0;
         } else if (Util.wallAtUV(this.u - 1, this.v)) {
-            this.facing = 90;
+            this.facing = 270;
         } else if (Util.wallAtUV(this.u, this.v + 1)) {
             this.facing = 180;
         } else {
-            this.facing = 270;
+            this.facing = 90;
         }
     }
 }

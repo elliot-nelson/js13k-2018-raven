@@ -115,7 +115,7 @@ class Game {
             this.pendingLevelIndex = undefined;
         }
 
-        this.audio.update();
+        this.audio.update(delta);
 
         if (this.menu) {
             this.menu.update(delta);
@@ -170,19 +170,19 @@ class Game {
             this.facing = Util.atanPoints(this.player, this.crosshair);
 
             this.vision = [];
-            if (!this.player.dead) {
-                this.vision = this.vision.concat(Util.getVisCone(this.player, this.facing, this.fov, 4, 5));
+            if (Util.pointInBounds(this.player, this.level.enterBounds)) {
+                this.vision.push(Util.getVisBounds(this.level.enterBounds, 0.69));
+            }
+            if (Util.pointInBounds(this.player, this.level.exitBounds)) {
+                this.vision.push(Util.getVisBounds(this.level.exitBounds, 0.69));
             }
             this.cameras.forEach(camera => {
                 if (camera.enabled) {
-                    this.vision = this.vision.concat(Util.getVisCone(camera, camera.facing, camera.fov, 12, 0));
+                    this.vision = this.vision.concat(Util.getVisCone(camera, camera.facing, camera.fov, 12, 0, 0.69));
                 }
             });
-            if (Util.pointInBounds(this.player, this.level.enterBounds)) {
-                this.vision.push(Util.getVisBounds(this.level.enterBounds));
-            }
-            if (Util.pointInBounds(this.player, this.level.exitBounds)) {
-                this.vision.push(Util.getVisBounds(this.level.exitBounds));
+            if (!this.player.dead) {
+                this.vision = this.vision.concat(Util.getVisCone(this.player, this.facing, this.fov, 4, 5, 1));
             }
 
             this.buildAttackGrid();
@@ -268,7 +268,7 @@ class Game {
 
             // Uncomment this block to draw dashed yellow lines along the various
             // visibility edges.
-            let losEdges = this.losEdges;
+            /*let losEdges = this.losEdges;
             this.doors.forEach(door => losEdges = losEdges.concat(door.getLosEdges()));
             losEdges.forEach(edge => {
                 this.ctx.save();
@@ -280,7 +280,7 @@ class Game {
                 this.ctx.lineTo(this.offset.x + edge.p2.x, this.offset.y + edge.p2.y);
                 this.ctx.stroke();
                 this.ctx.restore();
-            });
+            });*/
 
             if (this.player.dead) {
                 this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -294,7 +294,7 @@ class Game {
             this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.vision.forEach((polygon, idx) => {
-                this.losCtx.fillStyle = 'white';
+                this.losCtx.fillStyle = 'rgba(255, 255, 255, ' + polygon.opacity + ')';
                 this.losCtx.beginPath();
                 this.losCtx.moveTo(this.offset.x + polygon[0].x, this.offset.y + polygon[0].y);
                 for (let i = 1; i < polygon.length; i++) {
