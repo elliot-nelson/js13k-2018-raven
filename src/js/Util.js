@@ -42,9 +42,14 @@ const Util = {
         return d * Math.PI * 2 / 360;
     },
 
+    // degree wrap
+    dw(d) {
+        return (d + 720) % 360;
+    },
+
     // Return true if given angle is "between" (clockwise) two other angles
     angleWithin(angle, b1, b2) {
-        return dw(angle - b1) < dw(b2 - b1);
+        return Util.dw(angle - b1) < Util.dw(b2 - b1);
     },
 
     // rand floor
@@ -184,8 +189,8 @@ const Util = {
         // Add in dynamic visibility edges
         game.doors.forEach(door => edges = edges.concat(door.getLosEdges()));
 
-        let startAngle = dw(facing - coneAngle / 2);
-        let endAngle = dw(facing + coneAngle / 2);
+        let startAngle = Util.dw(facing - coneAngle / 2);
+        let endAngle = Util.dw(facing + coneAngle / 2);
 
         if (endAngle < startAngle) endAngle += 360;
 

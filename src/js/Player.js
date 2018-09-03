@@ -101,7 +101,7 @@ class Player {
         game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
         game.ctx.rotate(Util.d2r(game.facing + 90));
         if (walkImage) game.ctx.drawImage(Asset.img[walkImage], -16, -16);
-        game.ctx.drawImage(Asset.img.player, -16, -16);
+        game.ctx.drawImage(Asset.img.player, -10, -7);
         game.ctx.restore();
     }
 
