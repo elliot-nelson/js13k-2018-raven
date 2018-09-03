@@ -12,9 +12,6 @@ function xyd(p, d, u) {
 
 class Input {
     constructor(handlers) {
-        // Raw key code state
-        this.keys = [];
-
         // Input queue (used only for cheat codes)
         this.queue = [];
 
@@ -33,6 +30,10 @@ class Input {
         this.map[27] = 'escape';   // Escape
         this.map[75] = 'kill';     // Kill
 
+        // TODO: A nice extension would be to have key remapping, which isn't that
+        // hard - make the above settings configurable, add in a Keys menu, etc. etc.
+        // Not going to bother for submission, though.
+
         // Key press handlers
         this.handlers = handlers;
 
@@ -47,10 +48,8 @@ class Input {
         document.addEventListener('keydown', event => {
             var k = this.map[event.keyCode];
 
-            console.log(event.keyCode);
-
-            // Raw key state (let's delete this)
-            this.keys[event.keyCode] = true;
+            // Uncomment to see key codes in console (an easy way to gather potential keys)
+            // console.log(event.keyCode);
 
             if (k) {
                 // Some keys are "stateful" (we evaluate each frame whether they are still
@@ -72,8 +71,6 @@ class Input {
 
         document.addEventListener('keyup', event => {
             var k = this.map[event.keyCode];
-
-            this.keys[event.keyCode] = undefined;
 
             this.queue.unshift(event.key);
             this.queue.splice(10);

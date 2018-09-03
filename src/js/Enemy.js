@@ -52,7 +52,6 @@ class Enemy {
                 attackAngle = this.bestAttackAngle();
 
                 if (attackAngle !== undefined) {
-                    console.log(["idle->attack", attackAngle]);
                     this.state = 'attack';
                     this.attackAngle = attackAngle;
                     this.attackVel = 265;
@@ -70,7 +69,6 @@ class Enemy {
                 attackAngle = this.bestAttackAngle();
 
                 if (attackAngle === undefined) {
-                    console.log(["attack->idle"]);
                     this.state = 'idle';
                 } else {
                     this.vx = Util.cos(attackAngle) * this.attackVel;

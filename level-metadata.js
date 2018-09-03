@@ -21,7 +21,9 @@ const LevelMetadata = {
     },
     level02: {
         name: 'Security Annex 209A',
-        hint: '! Once spotted, do not look away from a Raven.'
+        hint: '! Once spotted, do not look away from a Raven.',
+        chx: 0,
+        chy: 32
     },
     level03: {
         name: 'Corridor 1106',
@@ -30,8 +32,6 @@ const LevelMetadata = {
     level04: {
         name: 'Corridor 1207',
         hint: '! Turn on security cameras using nearby terminals.',
-        chx: 0,
-        chy: 32
     },
     level05: {
         name: 'Lobby',

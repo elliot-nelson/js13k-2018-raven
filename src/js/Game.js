@@ -111,7 +111,6 @@ class Game {
 
     update(delta) {
         if (typeof this.pendingLevelIndex !== 'undefined') {
-            console.log("jumping to " + this.pendingLevelIndex);
             this.load(this.pendingLevelIndex);
             this.pendingLevelIndex = undefined;
         }
@@ -132,7 +131,6 @@ class Game {
             }
 
             if (this.levelComplete && (this.framems - this.levelCompleteMs) > 2200) {
-                console.log("ON TO NEXT LEVEL");
                 this.pendingLevelIndex = this.levelIndex + 1;
             }
 
@@ -437,7 +435,6 @@ class Game {
     //
 
     unpause() {
-        console.log('reuqest it');
         this.canvas.requestPointerLock();
     }
 
@@ -476,13 +473,11 @@ class Game {
 
     onMouseLock() {
         if (document.pointerLockElement === this.canvas) {
-            console.log('mouselock on');
             this.mouselocked = true;
             this.paused = false;
             this.menu = undefined;
             this.framems = performance.now();
         } else {
-            console.log('mouselock off');
             this.mouselocked = false;
             this.paused = true;
             this.openMenu(this.pauseMenu);
@@ -752,7 +747,6 @@ class Game {
                    this.input.queue[4] === 'i') {
             this.godmode = !this.godmode;
             this.input.queue = [];
-            console.log("god mode: " + this.godmode);
         }
     }
 /*
