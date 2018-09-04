@@ -170,11 +170,11 @@ class Game {
             this.facing = Util.atanPoints(this.player, this.crosshair);
 
             this.vision = [];
-            if (Util.pointInBounds(this.player, this.level.enterBounds)) {
-                this.vision.push(Util.getVisBounds(this.level.enterBounds, 0.69));
+            if (Util.pointInBounds(this.player, this.level.enter)) {
+                this.vision.push(Util.getVisBounds(this.level.enter, 0.69));
             }
-            if (Util.pointInBounds(this.player, this.level.exitBounds)) {
-                this.vision.push(Util.getVisBounds(this.level.exitBounds, 0.69));
+            if (Util.pointInBounds(this.player, this.level.exit)) {
+                this.vision.push(Util.getVisBounds(this.level.exit, 0.69));
             }
             this.cameras.forEach(camera => {
                 if (camera.enabled) {
@@ -193,7 +193,7 @@ class Game {
             if (!this.player.dead) {
                 this.enemies.forEach(enemy => {
                     if (Util.pointNearPoint(enemy, this.player, enemy.killRadius)) {
-                        if (!this.godmode) this.playerDied();
+                        this.playerDied();
                     }
                 });
 
@@ -205,7 +205,7 @@ class Game {
                 });
                 this.activeTerminal = activeTerminal;
 
-                if (!this.levelComplete && Util.pointInBounds(this.player, this.level.exitBounds)) {
+                if (!this.levelComplete && Util.pointInBounds(this.player, this.level.exit)) {
                     this.levelComplete = true;
                     this.levelCompleteMs = performance.now();
                 }
@@ -511,7 +511,7 @@ class Game {
         this.level.data = this.unpackData(this.level.data);
         this.levelComplete = false;
 
-        let eb = this.level.enterBounds;
+        let eb = this.level.enter;
 
         this.player = new Player();
         this.player.x = (eb.p1.x + eb.p2.x) / 2;
@@ -522,26 +522,26 @@ class Game {
         this.polygonize(this.level);
 
         this.enemies = [];
-        this.level.enemies.forEach(enemyData => {
+        this.level.e.forEach(enemyData => {
             let enemy = new Enemy(enemyData);
             this.enemies.push(enemy);
         });
 
         this.cameras = [];
-        this.level.cameras.forEach(cameraData => {
+        this.level.c.forEach(cameraData => {
             let camera = new Camera(cameraData);
             this.cameras.push(camera);
         });
 
         this.terminals = [];
-        this.level.terminals.forEach(terminalData => {
+        this.level.t.forEach(terminalData => {
             let terminal = new Terminal(terminalData);
             terminal.cameras = this.cameras.filter(camera => camera.control === terminal.control);
             this.terminals.push(terminal);
         });
 
         this.doors = [];
-        this.level.doors.forEach(doorData => {
+        this.level.d.forEach(doorData => {
             let door = new Door(doorData);
             this.doors.push(door);
         });
@@ -566,7 +566,7 @@ class Game {
 
                     this.tileCtx.save();
                     // Totally cheating... mute the floor a little bit.
-                    this.tileCtx.globalAlpha = 0.82;
+                    this.tileCtx.globalAlpha = 0.81;
                     this.tileCtx.translate(j * 32 + 16, i * 32 + 16);
                     this.tileCtx.rotate(Util.d2r(rot));
                     this.tileCtx.drawImage(Asset.tile.floor, -16, -16);

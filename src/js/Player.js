@@ -85,22 +85,19 @@ class Player {
     }
 
     render() {
-        // By relying on global frame, we're definitely cheating - a more
-        // reliable and visually consistent method is to have real "animation frames",
-        // a walking state and an idle state, etc. All of that is easily doable,
-        // but I'm shaving a few hundred bytes with this approximation.
-        let walkImage = [
-            'player_l',
-            ,
-            'player_r',
-            ,
-        ][Math.floor((game.framems % 800) / 200)];
-        if (this.vx === 0 && this.vy === 0) walkImage = undefined;
+        // Walking animation frames would be great, but let's hack it.
+        // Actual walking images would be nice, but a filled dark grey
+        // rectangle will need to take the place of a shoe, this time.
+        let walk = [-6,,3,][Math.floor((game.framems % 800) / 200)];
+        if (this.vx === 0 && this.vy === 0) walk = false;
 
         game.ctx.save();
         game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
         game.ctx.rotate(Util.d2r(game.facing + 90));
-        if (walkImage) game.ctx.drawImage(Asset.img[walkImage], -16, -16);
+        if (walk) {
+            game.ctx.fillStyle = 'rgba(32, 32, 48, 1)';
+            game.ctx.fillRect(walk, -6, 3, 3);
+        }
         game.ctx.drawImage(Asset.img.player, -10, -7);
         game.ctx.restore();
     }

@@ -146,14 +146,29 @@ const levelPacker = {
             }
         }
 
-        level.enterBounds = {
+        level.enter = {
             p1: { x: enterBounds.left, y: enterBounds.top },
             p2: { x: enterBounds.right, y: enterBounds.bottom }
         };
-        level.exitBounds = {
+        level.exit = {
             p1: { x: exitBounds.left, y: exitBounds.top },
             p2: { x: exitBounds.right, y: exitBounds.bottom }
         };
+
+        // The "clean up step".
+
+        level.d = level.doors;
+        delete level.doors;
+        level.d.forEach(door => { delete door.type; });
+
+        level.e = level.enemies;
+        delete level.enemies;
+
+        level.t = level.terminals;
+        delete level.terminals;
+
+        level.c = level.cameras;
+        delete level.cameras;
 
         return level;
     },
