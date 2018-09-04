@@ -18,43 +18,45 @@ class Audio {
         this.gainNode.connect(this.ctx.destination);
 
         this.tick = 0;
-        this.startOffset = this.ctx.currentTime;
-        this.tickLength = 1/5;
-        this.dangerLevel = 0;
+        this.tickLength = 1/6;
         this.gain = 0.3;
+        this.nextTick = this.tickLength;
     }
 
     update(delta) {
-        if (this.ctx.currentTime < time) {
-            // Let's "teleport forward" to the current time. This can happen if we're in
-            // a background tab for a while.
-            this.startOffset = time - this.ctx.currentTime;
-        }
-
         // Each frame, schedule some notes if we're less than a second away from when
-        // those notes need to be played.
-        let time = this.startOffset + this.tickLength * this.tick;
-        if (time - this.ctx.currentTime < 1) {
-            this.scheduleForTick(this.tick, this.tickLength, this.startOffset, this.gainNode);
+        // the next note should be played.
+        if (this.nextTick - this.ctx.currentTime < 0.2) {
+            this.scheduleForTick(this.tick, this.nextTick, this.tickLength, this.gainNode);
             this.tick++;
+
+            // If we go into the background, the Audio Context's currentTime will keep increasing,
+            // but Audio.update will stop running (because we only run when the next animation
+            // frame is received). This "automatically" stops our bg music when switching tabs,
+            // which I think is a feature-not-a-bug. However, when we come back, we need to
+            // make sure we don't spend a bunch of frames slowly catching back up to the
+            // current time.
+            if (this.nextTick < this.ctx.currentTime) this.nextTick = this.ctx.currentTime;
+
+            this.nextTick += this.tickLength;
         }
 
         // Do some basic gain manipulation
         if (game.menu || game.intro || game.player.dead || game.levelComplete) {
             if (this.gain > 0.4) {
-                this.gain -= delta;
+                this.gain -= delta / 2.5;
             } else if (this.gain < 0.4) {
-                this.gain += delta;
+                this.gain += delta / 2.5;
             }
         } else {
-            if (this.gain < 0.8) {
-                this.gain += delta;
+            if (this.gain < 0.7) {
+                this.gain += delta / 2.5;
             }
         }
         this.gainNode.gain.value = this.gain;
     }
 
-    scheduleForTick(tick, tickLength, startOffset, dest) {
+    scheduleForTick(tick, nextTick, tickLength, dest) {
         // I am not a music expert, so please assume that any statements I make about
         // keys, chords, and other music theory in these comments may be 100% wrong.
 
@@ -123,17 +125,27 @@ class Audio {
         track = track.concat(track).concat(track2).concat(track3);
 
         let notes = track[tick % track.length];
+        let noteLength = tickLength * 1.41;
 
         // Oscillator creation taken from the generator at https://xem.github.io/miniMusic/advanced.html,
         // although I ended up moving the note creation out of the loop below, just so it is easier for
         // me to reason about.
         for (let i = 0; i < notes.length; i++) {
             let o = this.ctx.createOscillator();
-            o.frequency.value = 988/1.06**notes[i];
+            let freq = 988/1.06**notes[i];
+            o.frequency.value = freq;
             o.type = 'triangle';
             o.connect(dest);
-            o.start(startOffset + tickLength * tick);
-            o.stop(startOffset + tickLength * tick + tickLength * 1.4);
+            o.start(nextTick);
+
+            // When to "stop" this note turns out to be surprisingly important; the obvious value is just
+            // (start + note length), but there's a lot of ugly clicking at the end of each note. See
+            // http://alemangui.github.io/blog//2015/12/26/ramp-to-value.html for an explanation. Unlike
+            // the author's solution, though, I don't want to mess around with gain ramping because
+            // we have a whole bunch of other notes to play, so instead, we try to land the "end" of the
+            // oscillation at a multiple of (1/freq), where we'll be at 0, for a clean note exit.
+            noteLength = Math.floor(noteLength * freq) / freq;
+            o.stop(nextTick + noteLength);
         }
     }
 }

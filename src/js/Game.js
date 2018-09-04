@@ -46,6 +46,7 @@ class Game {
 
         this.framems = 0;
         this.enemies = [];
+        this.danger = 0;
 
         this.crosshair = { x: 0, y: 0 };
         this.mouse = { x: 0, y: 0 };
@@ -119,12 +120,14 @@ class Game {
 
         if (this.menu) {
             this.menu.update(delta);
+            this.danger = 0;
         } else if (this.intro) {
             this.intro.update(delta);
             if (this.intro.state === 'dead') {
                 this.intro = undefined;
             }
             this.levelms = performance.now();
+            this.danger = 0;
         } else if (this.level) {
             if (this.player.dead) {
                 this.deathFrame++;
@@ -170,11 +173,14 @@ class Game {
             this.facing = Util.atanPoints(this.player, this.crosshair);
 
             this.vision = [];
+            let safe = false;
             if (Util.pointInBounds(this.player, this.level.enter)) {
                 this.vision.push(Util.getVisBounds(this.level.enter, 0.69));
+                safe = true;
             }
             if (Util.pointInBounds(this.player, this.level.exit)) {
                 this.vision.push(Util.getVisBounds(this.level.exit, 0.69));
+                safe = true;
             }
             this.cameras.forEach(camera => {
                 if (camera.enabled) {
@@ -187,7 +193,11 @@ class Game {
 
             this.buildAttackGrid();
 
-            this.enemies.forEach(enemy => enemy.update(delta));
+            let attackers = 0;
+            this.enemies.forEach(enemy => {
+                enemy.update(delta);
+                if (enemy.state === 'attack') attackers++;
+            });
             this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
 
             if (!this.player.dead) {
@@ -212,9 +222,16 @@ class Game {
             }
 
             this.renderPrep = true;
+            if (safe) {
+                this.danger = 0;
+            } else if (attackers > 0) {
+                this.danger = 2;
+            } else {
+                this.danger = 1;
+            }
         }
 
-        //this.handleCheatCodes();
+        this.handleCheatCodes();
     }
 
     render() {
@@ -729,7 +746,7 @@ class Game {
     }
 
 
-    /*handleCheatCodes() {
+    handleCheatCodes() {
         // GOTOnn (nn = 01-99, number of a valid level)
         if (this.input.queue[0] >= '0' && this.input.queue[0] <= '9' &&
             this.input.queue[1] >= '0' && this.input.queue[1] <= '9' &&
@@ -750,7 +767,7 @@ class Game {
             this.godmode = !this.godmode;
             this.input.queue = [];
         }
-    }*/
+    }
 
 
     // What follows is a very long commented out remnant of attack paths built by polygon,

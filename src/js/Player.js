@@ -29,8 +29,8 @@ class Player {
 
         if (game.levelComplete) {
             let target = {
-                x: (game.level.exitBounds.p1.x + game.level.exitBounds.p2.x) / 2,
-                y: (game.level.exitBounds.p1.y + game.level.exitBounds.p2.y) / 2
+                x: (game.level.exit.p1.x + game.level.exit.p2.x) / 2,
+                y: (game.level.exit.p1.y + game.level.exit.p2.y) / 2
             };
             let angle = Util.atanPoints(this, target);
             this.vx = Util.cos(angle) * this.maxSpeed / 2;
@@ -122,10 +122,10 @@ class Player {
             [-2, 2],
             [2, -2],
             [2, 2]
-        ].forEach(([dx, dy]) => {
-            game.ctx.moveTo(x + dx * 3, y + dy);
-            game.ctx.lineTo(x + dx, y + dy);
-            game.ctx.lineTo(x + dx, y + dy * 3);
+        ].forEach(c => {
+            game.ctx.moveTo(x + c[0] * 3, y + c[1]);
+            game.ctx.lineTo(x + c[0], y + c[1]);
+            game.ctx.lineTo(x + c[0], y + c[1] * 3);
         });
         game.ctx.stroke();
     }
