@@ -21,8 +21,6 @@ class Enemy {
         this.killRadius = 14;
 
         this.state = 'asleep';
-
-        console.log([this.wake, this.wakeRadius, this.state]);
     }
 
     update(delta) {

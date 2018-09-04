@@ -196,13 +196,13 @@ const levelPacker = {
     packData(data) {
         let result = [];
 
-        let a = data[0], l = 1;
+        let a = data[0], l = 1, byte;
         for (let i = 1; i < data.length; i++) {
             b = data[i];
 
             if (a > 7) throw new Error("cannot pack level: byte>7");
 
-            if (b === a && l < 7) {
+            if (b === a && l < 11) {
                 l++;
                 continue;
             }
@@ -211,7 +211,9 @@ const levelPacker = {
             // bits, like `((l<<3)+a)`, and then perhaps convert the binary string into
             // a Base64 string and read it. In this case I'm optimizing for simplicity/least
             // code in the level reading logic.
-            result.push(String.fromCharCode(35 + (l - 1) * 8 + a));
+            byte = 35 + (l - 1) * 8 + a;
+            if (byte >= 92) byte++;
+            result.push(String.fromCharCode(byte));
             a = b;
             l = 1;
         }

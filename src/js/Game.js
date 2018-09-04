@@ -214,7 +214,7 @@ class Game {
             this.renderPrep = true;
         }
 
-        this.handleCheatCodes();
+        //this.handleCheatCodes();
     }
 
     render() {
@@ -589,6 +589,7 @@ class Game {
         let result = [], v, c, l;
         for (let i = 0; i < data.length; i++) {
             v = data.charCodeAt(i) - 35;
+            if (v >= 58) v--;
             c = v % 8;
             l = (v - c) / 8 + 1;
             for (let j = 0; j < l; j++) result.push(c);
@@ -599,8 +600,8 @@ class Game {
     renderTileNoise(seed, x, y) {
         // Adding some noise makes most tiles look much more natural (easier on
         // the eyes), but it also explodes PNG size by an order of magnitude. Cheat
-        // by saving the PNGs as mostly-solid-color (also allows us to index colors,
-        // saving even more space), and add the noise in when we render the level.
+        // by saving the PNGs as mostly-solid-color and add noise in when we render
+        // the level.
         //let seeded = Util.Alea(seed);
         //let rand = () => Math.floor(seeded() * 256);
         let r,g,b,a,w;
@@ -728,7 +729,7 @@ class Game {
     }
 
 
-    handleCheatCodes() {
+    /*handleCheatCodes() {
         // GOTOnn (nn = 01-99, number of a valid level)
         if (this.input.queue[0] >= '0' && this.input.queue[0] <= '9' &&
             this.input.queue[1] >= '0' && this.input.queue[1] <= '9' &&
@@ -749,8 +750,18 @@ class Game {
             this.godmode = !this.godmode;
             this.input.queue = [];
         }
-    }
-/*
+    }*/
+
+
+    // What follows is a very long commented out remnant of attack paths built by polygon,
+    // instead of by map grid. In theory, this is actually the sane way to do pathing -
+    // it works by drawing a direct line from the enemy to the player (or vice versa, doesn't
+    // really matter), detecting intersecting concerns (walls, LOS edges), and then following
+    // the intersection to both ends and repeating the process.
+    //
+    // This approach showed some promise and handled pillars and walls well, but concave corners
+    // were giving me trouble and I had to abandon it - for now! Maybe in a future game :).
+    /*
     buildAttackGraph() {
         return;
 
@@ -941,6 +952,9 @@ class Game {
     }
     */
 
+    // This is what I ended up with instead, which is a basic map "flood fill". Because
+    // none of my levels are very large, I didn't really have to implement an A* or
+    // anything, I just do basic breadth-first search of the map.
     buildAttackGrid() {
         let target = {
             x: game.player.x - Util.cos(game.facing) * 34,
