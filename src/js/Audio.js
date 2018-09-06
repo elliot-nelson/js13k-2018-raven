@@ -17,9 +17,14 @@ class Audio {
         this.gainNode.gain.value = 1;
         this.gainNode.connect(this.ctx.destination);
 
+        this.noteGain = this.ctx.createGain();
+        this.noteGain.gain.value = 1;
+        this.noteGain.connect(this.gainNode);
+
         this.tick = 0;
-        this.tickLength = 1/6;
-        this.gain = 0.3;
+        this.tickLength = 1/5;
+        this.gain = 0.1;
+        this.cents = 0;
         this.nextTick = this.tickLength;
     }
 
@@ -27,7 +32,7 @@ class Audio {
         // Each frame, schedule some notes if we're less than a second away from when
         // the next note should be played.
         if (this.nextTick - this.ctx.currentTime < 0.2) {
-            this.scheduleForTick(this.tick, this.nextTick, this.tickLength, this.gainNode);
+            this.scheduleForTick(this.tick, this.nextTick, this.tickLength, this.noteGain);
             this.tick++;
 
             // If we go into the background, the Audio Context's currentTime will keep increasing,
@@ -44,13 +49,13 @@ class Audio {
         // Do some basic gain manipulation
         if (game.menu || game.intro || game.player.dead || game.levelComplete) {
             if (this.gain > 0.4) {
-                this.gain -= delta / 2.5;
+                this.gain -= delta / 3.5;
             } else if (this.gain < 0.4) {
-                this.gain += delta / 2.5;
+                this.gain += delta / 3.5;
             }
         } else {
             if (this.gain < 0.7) {
-                this.gain += delta / 2.5;
+                this.gain += delta / 3.5;
             }
         }
         this.gainNode.gain.value = this.gain;
@@ -125,7 +130,7 @@ class Audio {
         track = track.concat(track).concat(track2).concat(track3);
 
         let notes = track[tick % track.length];
-        let noteLength = tickLength * 1.41;
+        let noteLength = tickLength * 1.39;
 
         // Oscillator creation taken from the generator at https://xem.github.io/miniMusic/advanced.html,
         // although I ended up moving the note creation out of the loop below, just so it is easier for
@@ -133,8 +138,10 @@ class Audio {
         for (let i = 0; i < notes.length; i++) {
             let o = this.ctx.createOscillator();
             let freq = 988/1.06**notes[i];
+            let cents = 0;
             o.frequency.value = freq;
             o.type = 'triangle';
+            o.detune.value = cents;
             o.connect(dest);
             o.start(nextTick);
 
@@ -144,7 +151,19 @@ class Audio {
             // the author's solution, though, I don't want to mess around with gain ramping because
             // we have a whole bunch of other notes to play, so instead, we try to land the "end" of the
             // oscillation at a multiple of (1/freq), where we'll be at 0, for a clean note exit.
-            noteLength = Math.floor(noteLength * freq) / freq;
+            //
+            // TODO: This is frustrating because I'd like to play with, for example, detuning and frequency
+            // modulation (gives a creepy jewelry box sound); however, changing +/-cents on my note
+            // changes the frequency, and my note length calculation becomes invalid. I should be modulating
+            // the gain instead at the end of the note, but it interferes with the next note. Needs more
+            // research, I guess...
+            //
+            // If we DO use cents, take it into account (to find the real zero point).
+            let rfreq = freq * Math.pow(2, cents / 1200);
+
+            // Basically "noteLength -= noteLength % rfreq", except it doesn't end up being zero.
+            noteLength = Math.floor(noteLength * rfreq) / rfreq;
+
             o.stop(nextTick + noteLength);
         }
     }

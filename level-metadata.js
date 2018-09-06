@@ -43,6 +43,16 @@ const LevelMetadata = {
         name: 'Lobby',
         hint: '! You must enable all security cameras to proceed.',
     },
+    level07: {
+        name: 'Lobby',
+        hint: '! You must enable all security cameras to proceed.',
+    },
+    level08: {
+        name: 'Lobby',
+        hint: '! You must enable all security cameras to proceed.',
+        chx: 0,
+        chy: 32
+    },
     level09: {
         name: 'Badofjfoeof',
         hint: ''
