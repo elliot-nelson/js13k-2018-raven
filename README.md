@@ -13,7 +13,7 @@ Good luck!
 ## Building the game
 
 - `/src` contains the game source files and assets
-- `/raven` contains the build output (playable game w/index.html)
+- `/raven` would contain the built game (not checked in)
 - `/zip` contains the built game bundled into a zip file
 
 To rebuild, `npm install && gulp build` from the project folder.
