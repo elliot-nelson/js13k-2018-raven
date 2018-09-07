@@ -14,11 +14,11 @@ Good luck!
 
 - `/src` contains the game source files and assets
 - `/raven` contains the build output (playable game w/index.html)
-- `/zip` contains the output zip file
+- `/zip` contains the built game bundled into a zip file
 
 To rebuild, `npm install && gulp build` from the project folder.
 
-Build the zip file with `gulp zip`, or to get the smallest possible size, `gulp zip:pre && gulp zip && gulp zip:post`. Using the `pre` and `post` steps requires additional tools (advpng and advzip, from http://www.advancemame.it/download).
+Build the zip file with `gulp zip`, or to get the smallest possible size, `gulp zip:pre && gulp zip && gulp zip:post`. Using the `pre` and `post` steps requires additional tools (`advpng` and `advzip`, from http://www.advancemame.it/download).
 
 ## Implementation notes
 
