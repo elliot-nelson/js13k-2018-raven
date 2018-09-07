@@ -61,6 +61,7 @@ class Enemy {
                     this.attackAngle = attackAngle;
                     this.attackVel = 265;
                     this.attackAccel = 670; // currently ignored, no accel physics
+                    game.audio.playSiren();
                 }
                 break;
             case 'attack':

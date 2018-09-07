@@ -10,6 +10,11 @@ class Intro {
     update(delta) {
         this.duration += delta;
         this.chars = Math.min(this.text.length, this.duration * this.charsPerSecond);
+
+        if (this.chars !== this.text.length) {
+            // Text "scroll" audio effect
+            game.audio.playClick();
+        }
     }
 
     render() {
@@ -45,8 +50,10 @@ class Intro {
     toggle() {
         if (this.chars === this.text.length) {
             this.state = 'dead';
+            game.audio.playBloop();
         } else {
             this.duration = 10000;
+            game.audio.playBloop();
         }
     }
 }

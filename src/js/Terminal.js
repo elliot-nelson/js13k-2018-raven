@@ -23,6 +23,7 @@ class Terminal {
         if (this.toggled) {
             this.enabled = !this.enabled;
             this.cameras.forEach(camera => camera.toggle());
+            game.audio.playBloop();
         }
 
         this.toggled = undefined;

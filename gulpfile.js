@@ -16,25 +16,25 @@ const shell = require('gulp-shell');
 const levelPacker = require("./level-packer");
 
 gulp.task('clean', () => {
-    return del('bin');
+    return del('raven');
 });
 
 gulp.task('build:html', () => {
     gulp.src('src/*.html')
         .pipe(htmlmin())
-        .pipe(gulp.dest('bin'));
+        .pipe(gulp.dest('raven'));
 });
 
 gulp.task('build:css', () => {
     gulp.src('src/css/*.css')
         .pipe(cleancss())
-        .pipe(gulp.dest('bin'));
+        .pipe(gulp.dest('raven'));
 });
 
 gulp.task('build:assets', () => {
     gulp.src(['src/assets/*.png', '!src/assets/meta_*.png'])
         .pipe(imagemin())
-        .pipe(gulp.dest('bin/assets'));
+        .pipe(gulp.dest('raven/assets'));
 });
 
 gulp.task('build:js', () => {
@@ -53,19 +53,19 @@ gulp.task('build:js', () => {
 
         .pipe(size())
         .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('bin'));
+        .pipe(gulp.dest('raven'));
 });
 
 gulp.task('build', ['build:html', 'build:css', 'build:assets', 'build:js']);
 
 // These two tasks require the advpng and advzip tools which you can download and
 // build from http://www.advancemame.it/download (from js13k resources page).
-gulp.task('zip:pre', shell.task('../advpng -z -4 bin/assets/*.png'));
-gulp.task('zip:post', shell.task('../advzip -z -4 zip/offline.zip'));
+gulp.task('zip:pre', shell.task('../advpng -z -4 raven/assets/*.png'));
+gulp.task('zip:post', shell.task('../advzip -z -4 zip/js13k-2018-raven.zip'));
 
 gulp.task('zip', () => {
-    gulp.src(['bin/**', '!bin/app.js.map'], { base: '.' })
-        .pipe(zip('offline.zip'))
+    gulp.src(['raven/**', '!raven/app.js.map'], { base: '.' })
+        .pipe(zip('js13k-2018-raven.zip'))
         .pipe(size())
         .pipe(gulp.dest('zip'));
 });

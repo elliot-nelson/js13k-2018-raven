@@ -245,41 +245,16 @@ class Game {
                 this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
             }
 
+            // "Draw" the pre-rendered level onto the canvas. Normally here we'd loop through
+            // level width and height, drawing each tile, but that many drawImage calls is
+            // way too slow.
             this.ctx.drawImage(this.tileCanvas, this.offset.x, this.offset.y);
-
-            /*for (var i = 0; i < this.level.height; i++) {
-                for(var j = 0; j < this.level.width ; j++) {
-                    var tile = this.level.data[i * this.level.width + j];
-                    if (tile === 1) {
-                        //this.ctx.drawImage(Asset.tile.wall, this.offset.x + j * 32, this.offset.y + i * 32);
-                    } else if (tile === 2) {
-                        //this.ctx.drawImage(Asset.tile.floor, this.offset.x + j * 32, this.offset.y + i * 32);
-                    }
-
-                    this.ctx.font = '12px serif';
-                    this.ctx.fillStyle = 'white';
-                    //this.ctx.fillText(this.routes[i * this.level.width + j], offsetX + j * 32 + 4, offsetY + i * 32 + 4);
-                }
-            }*/
 
             this.terminals.forEach(terminal => terminal.render());
             this.enemies.forEach(enemy => enemy.render());
             this.player.render();
             this.cameras.forEach(camera => camera.render());
             this.doors.forEach(door => door.render());
-
-            // Light cone
-            /*var cone1 = xyd(this.player, dw(this.facing - 30), 50);
-            var cone2 = xyd(this.player, dw(this.facing + 30), 50);
-            this.ctx.save();
-            this.ctx.strokeStyle = 'yellow';
-            this.ctx.beginPath();
-            this.ctx.moveTo(offsetX + this.player.x, offsetY + this.player.y);
-            this.ctx.lineTo(offsetX + cone1.x, offsetY + cone1.y);
-            this.ctx.lineTo(offsetX + cone2.x, offsetY + cone2.y);
-            this.ctx.closePath();
-            this.ctx.stroke();
-            this.ctx.restore();*/
 
             // Uncomment this block to draw dashed yellow lines along the various
             // visibility edges.
@@ -322,6 +297,7 @@ class Game {
 
             // Blit visibility
             this.ctx.save();
+            //this.ctx.filter = 'blur(3px)';
             // attempted: lighten, multiply, darken, source-in (darken looks best for shadows so far)
             this.ctx.globalCompositeOperation = 'darken';
             this.ctx.drawImage(this.losCanvas, 0, 0);
@@ -401,6 +377,11 @@ class Game {
         let hintChars = Math.max(0, chars - nameChars - 3);
 
         let delayStart = (this.level.hint.length + 3 + this.level.name.length) * 19;
+
+        if (this.framems - this.levelms < delayStart) {
+            // Text "scroll" audio effect
+            this.audio.playClick();
+        }
 
         if (this.framems - this.levelms - delayStart < 3000) {
             this.ctx.font = Asset.getFontString(22);
@@ -484,7 +465,6 @@ class Game {
     }
 
     onEscape() {
-        console.log("Game - onEscape", game.framems);
         if (this.menu) {
             this.menu.onEscape();
         } else {
@@ -521,7 +501,6 @@ class Game {
         this.mouse.x = clientX - this.canvasBounds.left;
         this.mouse.y = clientY - this.canvasBounds.top;
 
-        console.log(this.mouse.x, this.mouse.y);
         if (this.menu) this.menu.onMouseMove(this.mouse.x, this.mouse.y);
     }
 

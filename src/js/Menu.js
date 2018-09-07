@@ -50,27 +50,34 @@ class Menu {
 
     onUp() {
         this.selected = (this.selected - 1 + this.options.length) % this.options.length;
+        game.audio.playClick();
     }
 
     onDown() {
         this.selected = (this.selected + 1) % this.options.length;
+        game.audio.playClick();
     }
 
     onEscape() {
-        console.log("Menu - onEscape", game.framems);
         this.escapeHandler();
     }
 
     onMouseMove(x, y) {
+        let oldSelected = this.selected;
         this.options.forEach((entry, idx) => {
             if (x >= entry.x && x <= entry.x + entry.w &&
                 y >= entry.y - 30 && y <= entry.y) {
                 this.selected = idx;
             }
         });
+
+        if (oldSelected !== this.selected) {
+            game.audio.playClick();
+        }
     }
 
     select() {
         this.options[this.selected].handler();
+        game.audio.playBloop();
     }
 }
