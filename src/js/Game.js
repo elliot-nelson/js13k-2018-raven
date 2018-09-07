@@ -484,7 +484,19 @@ class Game {
     }
 
     onEscape() {
-        if (this.menu) this.menu.onEscape();
+        console.log("Game - onEscape", game.framems);
+        if (this.menu) {
+            this.menu.onEscape();
+        } else {
+            // NOTE: My reading of the spec is that we should never reach this point, because
+            // pressing ESC while we have no menu should be captured by the browser, and used
+            // to release pointer lock.
+            //
+            // On Safari, it seems like (even though the hover bar says it will), the pointer lock
+            // is never released. So we'll explicitly ask to release pointer lock, which will then
+            // trigger the change handler below and open the pause menu.
+            document.exitPointerLock();
+        }
     }
 
     onMouseLock() {
@@ -509,6 +521,7 @@ class Game {
         this.mouse.x = clientX - this.canvasBounds.left;
         this.mouse.y = clientY - this.canvasBounds.top;
 
+        console.log(this.mouse.x, this.mouse.y);
         if (this.menu) this.menu.onMouseMove(this.mouse.x, this.mouse.y);
     }
 

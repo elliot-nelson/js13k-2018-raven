@@ -11,7 +11,12 @@
  */
 class Audio {
     constructor() {
-        this.ctx = new AudioContext();
+        let ctxClass = (window.AudioContext || window.webkitAudioContext);
+        if (ctxClass) {
+            this.ctx = new ctxClass();
+        } else {
+            this.disabled = true;
+        }
 
         this.gainNode = this.ctx.createGain();
         this.gainNode.gain.value = 1;
@@ -29,6 +34,8 @@ class Audio {
     }
 
     update(delta) {
+        if (this.disabled) return;
+
         // Each frame, schedule some notes if we're less than a second away from when
         // the next note should be played.
         if (this.nextTick - this.ctx.currentTime < 0.2) {

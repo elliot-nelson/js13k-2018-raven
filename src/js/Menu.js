@@ -57,13 +57,14 @@ class Menu {
     }
 
     onEscape() {
+        console.log("Menu - onEscape", game.framems);
         this.escapeHandler();
     }
 
     onMouseMove(x, y) {
         this.options.forEach((entry, idx) => {
-            if (x >= entry.left && x <= entry.left + entry.width &&
-                y >= entry.bottom - 30 && y <= entry.bottom) {
+            if (x >= entry.x && x <= entry.x + entry.w &&
+                y >= entry.y - 30 && y <= entry.y) {
                 this.selected = idx;
             }
         });

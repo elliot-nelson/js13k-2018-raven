@@ -70,6 +70,7 @@ class Input {
                 this[k] = undefined;
 
                 if (this.handlers[k] && typeof this.handlers[k].up === 'function') {
+                    console.log("UP");
                     this.handlers[k].up();
                 }
             }
