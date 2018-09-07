@@ -42,10 +42,15 @@ gulp.task('build:js', () => {
         .pipe(add("LevelCache.js", levelPacker.packAll("src/levels/level*.json"), true))
         .pipe(sourcemaps.init())
         .pipe(concat('app.js'))
-        //.pipe(babel())
         .pipe(size())
+
+        // To generate ES5 code, for more compatibility, use babel+uglify.
+        //.pipe(babel())
         //.pipe(uglify({ toplevel: true }))
+
+        // For smaller ES6 code, and just be careful what syntax you use, uglifyES
         .pipe(uglifyes())
+
         .pipe(size())
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('bin'));

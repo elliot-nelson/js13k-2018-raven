@@ -129,18 +129,30 @@ const levelPacker = {
                     exitBounds.left = Math.min(exitBounds.left, j * 32);
                     exitBounds.right = Math.max(exitBounds.right, j * 32 + 32);
                 } else if (metaLayer.data[i * width + j] === 7) {
+                    let door;
                     if (metaLayer.data[i * width + j + 1] === 7) {
-                        level.doors.push({
+                        door = {
                             u: j,
                             v: i,
                             type: 'h'
-                        });
+                        };
                     } else if (metaLayer.data[(i + 1) * width + j] === 7) {
-                        level.doors.push({
+                        door = {
                             u: j,
                             v: i,
                             type: 'v'
-                        });
+                        };
+                    }
+                    if (door) {
+                        if (metaLayer.data[i * width + j + 1] === 4 ||
+                            metaLayer.data[i * width + j - 1] === 4 ||
+                            metaLayer.data[(i + 1) * width + j] === 4 ||
+                            metaLayer.data[(i - 1) * width + j] === 4) {
+                            door.exitDoor = true;
+                        } else {
+                            door.entranceDoor = true;
+                        }
+                        level.doors.push(door);
                     }
                 }
             }

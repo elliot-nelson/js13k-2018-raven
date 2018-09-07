@@ -138,8 +138,6 @@ class Game {
             }
 
             this.player.update(delta);
-            Util.boundEntityWall(this.player);
-
             this.terminals.forEach(terminal => terminal.update(delta));
             this.cameras.forEach(camera => camera.update(delta));
             this.doors.forEach(door => door.update(delta));
@@ -198,7 +196,7 @@ class Game {
                 enemy.update(delta);
                 if (enemy.state === 'attack') attackers++;
             });
-            this.enemies.forEach(enemy => Util.boundEntityWall(enemy));
+            this.enemies.forEach(enemy => Util.enforceEntityMovement(enemy));
 
             if (!this.player.dead) {
                 this.enemies.forEach(enemy => {

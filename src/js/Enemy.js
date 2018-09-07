@@ -19,6 +19,7 @@ class Enemy {
         this.wake = enemyData.wake || 'radius';
         this.wakeRadius = enemyData.wakeRadius || 384;
         this.killRadius = 14;
+        this.eyeQueue = [,,,,,,,,,,,,];
 
         this.state = 'asleep';
     }
@@ -177,14 +178,36 @@ class Enemy {
     }
 
     renderPost() {
+        // Eyes are rendered in post, so they glow on top of the LOS blanket.
+
+        // By adding in some sin/cos action, if you were to watch a statue's eyes while standing
+        // still, they would "swing" like a pendulum from one side to another. Although it's subtle,
+        // this gives the impression of a hulking, breathing creature in the room; when the eyes
+        // are in motion, this gives just enough herky-jerk stutter to make the creature feel like
+        // it is in some kind of running/crawling animation.
         if (this.state === 'attack') {
-            game.ctx.globalAlpha = 0.6;
-            for (let i = 0; i < 3; i++) {
-                let dx = Util.rf(7) - 3;
-                let dy = Util.rf(7) - 3;
-                game.ctx.drawImage(Asset.img.unraven, game.offset.x + this.x - this.width / 2 + dx, game.offset.y + this.y - this.height / 2 + dy);
+            this.eyeQueue.push({
+                x: this.x + Math.cos(game.framems / 300) * 8,
+                y: this.y - 6 + Math.abs(Math.sin(game.framems / 300) * 5)
+            });
+        } else {
+            this.eyeQueue.push(false);
+        }
+        this.eyeQueue.shift();
+
+        for (let i = 0; i < this.eyeQueue.length; i++) {
+            let ec = this.eyeQueue[i];
+            if (ec) {
+                //game.ctx.globalAlpha = 0.05 * i;
+                game.ctx.fillStyle = 'rgba(165, 10, 16, ' + (0.05 * i) + ')';
+                //game.ctx.fillStyle = 'rgba(165, 10, 16, ' + (0.05 * i1)';
+                game.ctx.fillRect(game.offset.x + ec.x - 5 - 1, game.offset.y + ec.y - 1, 3, 3);
+                game.ctx.fillRect(game.offset.x + ec.x + 5 - 1, game.offset.y + ec.y - 1, 3, 3);
+                game.ctx.fillStyle = 'rgba(254, 20, 32, ' + (0.05*i) + ')';
+                //game.ctx.fillStyle = 'rgba(254, 20, 32, 1)';
+                game.ctx.fillRect(game.offset.x + ec.x - 5, game.offset.y + ec.y, 2, 2);
+                game.ctx.fillRect(game.offset.x + ec.x + 5 - 1, game.offset.y + ec.y, 2, 2);
             }
-            game.ctx.globalAlpha = 1;
         }
     }
 

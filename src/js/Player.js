@@ -75,12 +75,18 @@ class Player {
             }
         }
 
+        let oldX = this.x, oldY = this.y;
+
         this.x += this.vx * delta;
         this.y += this.vy * delta;
+        Util.enforceEntityMovement(this);
 
+        // Move the crosshair by the same amount we moved the player. Note we do this
+        // after enforcing entity movement, so the crosshair doesn't slide when player
+        // hits walls.
         if (!game.lockCrosshairToMap) {
-            game.crosshair.x += this.vx * delta;
-            game.crosshair.y += this.vy * delta;
+            game.crosshair.x += (this.x - oldX);
+            game.crosshair.y += (this.y - oldY);
         }
     }
 

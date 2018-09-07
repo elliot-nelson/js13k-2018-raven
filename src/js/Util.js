@@ -306,24 +306,41 @@ const Util = {
         return Util.wallAtUV(Math.floor(x / 32), Math.floor(y / 32));
     },
 
-    // instead of wallAtXY, blockedAtXY? take terminal into account here
-
-    boundEntityWall(entity) {
-        if (Util.wallAtXY(entity.x - entity.width / 2, entity.y)) {
-            entity.x += 32 - ((entity.x - entity.width / 2) % 32);
+    doorAtXY(x, y) {
+        let door, u = Math.floor(x / 32), v = Math.floor(y / 32);
+        for (let i = 0; i < game.doors.length; i++) {
+            if ((game.doors[i].u === u && game.doors[i].v === v) ||
+                (game.doors[i].u === u - 1 && game.doors[i].v === v)) {
+                door = game.doors[i];
+                break;
+            }
         }
 
-        if (Util.wallAtXY(entity.x + entity.width / 2, entity.y)) {
-            entity.x -= ((entity.x + entity.width / 2) % 32);
+        if (door && door.slide < 10) {
+            if (y % 32 > 3 && y % 32 < 28) return true;
         }
 
-        if (Util.wallAtXY(entity.x, entity.y - entity.height / 2)) {
-            entity.y += 32 - ((entity.y - entity.height / 2) % 32);
+        return false;
+    },
+
+    enforceEntityMovement(entity) {
+        // Todo: should terminals have a small hit box so you can't just walk through them?
+        // It'd be more realistic, but I don't think it's a must-have...
+
+        function check(x, y, dirX, dirY, offset) {
+            if (Util.wallAtXY(x, y)) {
+                entity.x += dirX * offset;
+                entity.y += dirY * offset;
+            } else if (Util.doorAtXY(x, y)) {
+                entity.x += dirX * (offset - 4);
+                entity.y += dirY * (offset - 4);
+            }
         }
 
-        if (Util.wallAtXY(entity.x, entity.y + entity.height / 2)) {
-            entity.y -= ((entity.y + entity.height / 2) % 32);
-        }
+        check(entity.x - entity.width / 2, entity.y, 1, 0, 32 - ((entity.x - entity.width / 2) % 32));
+        check(entity.x + entity.width / 2, entity.y, -1, 0, ((entity.x + entity.width / 2) % 32));
+        check(entity.x, entity.y - entity.height / 2, 0, 1, 32 - ((entity.y - entity.height / 2) % 32));
+        check(entity.x, entity.y + entity.height / 2, 0, -1, ((entity.y + entity.height / 2) % 32));
     },
 
 /*
