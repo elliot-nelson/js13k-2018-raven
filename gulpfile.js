@@ -32,7 +32,9 @@ gulp.task('build:css', () => {
 });
 
 gulp.task('build:assets', () => {
-    gulp.src(['src/assets/*.png', '!src/assets/meta_*.png'])
+    // Assets starting with _ (underscore) don't need to be included in the build.
+    // (These are PNG files I'm using in my Tiled tileset, just for ease of editing.)
+    gulp.src(['src/assets/*.png', '!src/assets/_*.png'])
         .pipe(imagemin())
         .pipe(gulp.dest('raven/assets'));
 });
