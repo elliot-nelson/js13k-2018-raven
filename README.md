@@ -32,6 +32,10 @@ I couldn't have made this game without the following stellar resources. They may
 
 I knew I needed to knock some rust off when I started, and this tutorial was an excellent way to do so. My first couple hours was spent working off these notes.
 
+* [Pointer Lock and First Person Shooter Controls](https://www.html5rocks.com/en/tutorials/pointerlock/intro/)
+
+Useful and very thorough introduction to the Pointer Lock API. (Some of the notes on compatibility are now outdated, but otherwise still aces.)
+
 * [2d Visibility](https://www.redblobgames.com/articles/visibility/)
 
 Like every other tutorial on Red Blob, this one is super cool, and in some ways his little demos are the inspiration for this game. Actually, almost everything in this game can be traced back one of Amit's articles (ray casting, path finding, etc.).

@@ -19,8 +19,6 @@ class Camera {
             this.enabled = !this.enabled;
         }
 
-        //this.facing = dw(this.facing + 1);
-
         this._toggled = undefined;
     }
 

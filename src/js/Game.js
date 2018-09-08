@@ -216,6 +216,7 @@ class Game {
                 if (!this.levelComplete && Util.pointInBounds(this.player, this.level.exit)) {
                     this.levelComplete = true;
                     this.levelCompleteMs = performance.now();
+                    this.audio.playTri();
                 }
             }
 

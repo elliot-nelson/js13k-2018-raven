@@ -11,11 +11,10 @@ class Player {
         this.y = 40;
         this.vx = 0;
         this.vy = 0;
-        this.facing = 0;
 
-        this.accel = 400;     // per second
-        this.decel = 400;     // per second
-        this.maxSpeed = 100;   // per second
+        this._accel = 400;     // per second
+        this._decel = 400;     // per second
+        this._maxSpeed = 110;  // per second
 
         this.width = 8;
         this.height = 6;
@@ -37,43 +36,43 @@ class Player {
                 y: (game.level.exit.p1.y + game.level.exit.p2.y) / 2
             };
             let angle = Util.atanPoints(this, target);
-            this.vx = Util.cos(angle) * this.maxSpeed / 2;
-            this.vy = Util.sin(angle) * this.maxSpeed / 2;
+            this.vx = Util.cos(angle) * this._maxSpeed / 2;
+            this.vy = Util.sin(angle) * this._maxSpeed / 2;
             this.x += this.vx * delta;
             this.y += this.vy * delta;
             return;
         }
 
         if (game.input.up) {
-            this.vy -= this.accel * delta;
-            if (this.vy < -this.maxSpeed) {
-                this.vy = -this.maxSpeed;
+            this.vy -= this._accel * delta;
+            if (this.vy < -this._maxSpeed) {
+                this.vy = -this._maxSpeed;
             }
         } else if (game.input.down) {
-            this.vy += this.accel * delta;
-            if (this.vy > this.maxSpeed) {
-                this.vy = this.maxSpeed;
+            this.vy += this._accel * delta;
+            if (this.vy > this._maxSpeed) {
+                this.vy = this._maxSpeed;
             }
         } else {
             var dir = this.vy > 0 ? -1 : 1;
-            this.vy += this.decel * dir * delta;
+            this.vy += this._decel * dir * delta;
             if (this.vy < 0 && dir === -1 || this.vy > 0 && dir === 1) {
                 this.vy = 0;
             }
         }
         if (game.input.left) {
-            this.vx -= this.accel * delta;
-            if (this.vx < -this.maxSpeed) {
-                this.vx = -this.maxSpeed;
+            this.vx -= this._accel * delta;
+            if (this.vx < -this._maxSpeed) {
+                this.vx = -this._maxSpeed;
             }
         } else if (game.input.right) {
-            this.vx += this.accel * delta;
-            if (this.vx > this.maxSpeed) {
-                this.vx = this.maxSpeed;
+            this.vx += this._accel * delta;
+            if (this.vx > this._maxSpeed) {
+                this.vx = this._maxSpeed;
             }
         } else {
             var dir = this.vx > 0 ? -1 : 1;
-            this.vx += this.decel * dir * delta;
+            this.vx += this._decel * dir * delta;
             if (this.vx < 0 && dir === -1 || this.vx > 0 && dir === 1) {
                 this.vx = 0;
             }
