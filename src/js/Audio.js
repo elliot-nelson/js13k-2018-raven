@@ -19,45 +19,43 @@ class Audio {
             return;
         }
 
-        this.gain = {
-            bg: this.ctx.createGain(),
-            click: this.ctx.createGain(),
-            sfx: this.ctx.createGain()
-        };
+        // Create a gain node for each sound type we'll be playing.
+        this._sounds = {};
+        [
+            ['click', 0.1],
+            ['bloop', 0.5],
+            ['siren', 0.1],
+            ['music', 0.4]
+        ].forEach(data => {
+            this._sounds[data[0]] = this.ctx.createGain();
+            this._sounds[data[0]].gain.value = data[1];
+            this._sounds[data[0]].connect(this.ctx.destination);
+        });
 
-        this.gain.bg.gain.value = 0.4;
-        this.gain.bg.connect(this.ctx.destination);
-
-        this.gain.click.gain.value = 0.1;
-        this.gain.click.connect(this.ctx.destination);
-
-        this.gain.sfx.gain.value = 0.6;
-        this.gain.sfx.connect(this.ctx.destination);
-
-        this.tick = 0;
-        this.tickLength = 1/5;
-        this.cents = 0;
-        this.nextTick = this.tickLength;
-
-        this.last = {
+        // Used to track the most recent play of a sound.
+        this._last = {
             click: 0
         };
+
+        this._tick = 0;
+        this._tickLength = 1/5;
+        this._nextTick = this._tickLength;
     }
 
     update(delta) {
         if (this.disabled) return;
 
         if (game.player && game.player.dead) {
-            this.gain.bg.gain.value = Math.max(0, 0.4 - game.deathFrame / 1000);
+            this._sounds.music.gain.value = Math.max(0, 0.4 - game.deathFrame / 1000);
         } else {
-            this.gain.bg.gain.value = 0.4;
+            this._sounds.music.gain.value = 0.4;
         }
 
         // Each frame, schedule some notes if we're less than a second away from when
         // the next note should be played.
-        if (this.nextTick - this.ctx.currentTime < 0.2) {
-            this.scheduleForTick(this.tick, this.nextTick, this.tickLength, this.gain.bg);
-            this.tick++;
+        if (this._nextTick - this.ctx.currentTime < 0.2) {
+            this._scheduleForTick(this._tick, this._nextTick, this._tickLength, this._sounds.music);
+            this._tick++;
 
             // If we go into the background, the Audio Context's currentTime will keep increasing,
             // but Audio.update will stop running (because we only run when the next animation
@@ -65,9 +63,9 @@ class Audio {
             // which I think is a feature-not-a-bug. However, when we come back, we need to
             // make sure we don't spend a bunch of frames slowly catching back up to the
             // current time.
-            if (this.nextTick < this.ctx.currentTime) this.nextTick = this.ctx.currentTime;
+            if (this._nextTick < this.ctx.currentTime) this._nextTick = this.ctx.currentTime;
 
-            this.nextTick += this.tickLength;
+            this._nextTick += this._tickLength;
         }
 
         // Do some basic gain manipulation
@@ -85,7 +83,7 @@ class Audio {
         this.gainNode.gain.value = this.gain;*/
     }
 
-    scheduleForTick(tick, nextTick, tickLength, dest) {
+    _scheduleForTick(tick, nextTick, tickLength, dest) {
         // I am not a music expert, so please assume that any statements I make about
         // keys, chords, and other music theory in these comments may be 100% wrong.
 
@@ -162,10 +160,8 @@ class Audio {
         for (let i = 0; i < notes.length; i++) {
             let o = this.ctx.createOscillator();
             let freq = 988/1.06**notes[i];
-            let cents = Math.floor(Math.random() * this.cents);
             o.frequency.value = freq;
             o.type = 'triangle';
-            o.detune.value = cents;
             o.connect(dest);
             o.start(nextTick);
 
@@ -183,74 +179,45 @@ class Audio {
             // research, I guess...
             //
             // If we DO use cents, take it into account (to find the real zero point).
-            let rfreq = freq * Math.pow(2, cents / 1200);
+            // let rfreq = freq * Math.pow(2, cents / 1200);
 
             // Basically "noteLength -= noteLength % rfreq", except it doesn't end up being zero.
-            noteLength = Math.floor(noteLength * rfreq) / rfreq;
+            noteLength = Math.floor(noteLength * freq) / freq;
 
             o.stop(nextTick + noteLength);
         }
     }
 
-    playClick() {
+    _playOscillatorSound(channel, type, freq, rampFreq, rampTime, length, timeSinceLast) {
         if (this.disabled) return;
 
         let time = this.ctx.currentTime;
-        if (time - this.last.click < 0.05) return;
-        this.last.click = time;
+        if (timeSinceLast && time - this._last[channel] < timeSinceLast) return;
+        this._last[channel] = time;
 
-        let note = 1;
         let o = this.ctx.createOscillator();
-        let freq = 988/1.06**note;
-        let cents = 0;
-        o.frequency.valu = freq;
-        o.frequency.exponentialRampToValueAtTime(freq * 0.6, time + 0.1);
-        o.type = 'sine';
-        o.detune.value = cents;
-        o.connect(this.gain.click);
+        o.frequency.value = freq;
+        if (rampFreq) {
+            o.frequency.exponentialRampToValueAtTime(rampFreq, time + rampTime);
+        }
+        o.type = type;
+        o.connect(this._sounds[channel]);
         o.start(time);
-        o.stop(time + 0.01);
+        o.stop(time + length);
+    }
+
+    playClick() {
+        let freq = 988/1.06**1;
+        this._playOscillatorSound('click', 'sine', freq, freq * 0.6, 0.1, 0.01, 0.05);
     }
 
     playBloop() {
-        if (this.disabled) return;
-
-        let time = this.ctx.currentTime;
-
-        // We could probably do a similar check here, but we typically only play bloop in
-        // response to user input, and they can only click so fast.
-
-        let note = 28;
-        let o = this.ctx.createOscillator();
-        let freq = 988/1.06**note;
-        let cents = 0;
-        o.frequency.value = freq;
-        o.frequency.exponentialRampToValueAtTime(freq * 1.6, time + 0.2);
-        o.type = 'square';
-        o.detune.value = cents;
-        o.connect(this.gain.sfx);
-        o.start(time);
-        o.stop(time + 0.09);
+        let freq = 988/1.06**28;
+        this._playOscillatorSound('bloop', 'square', freq, freq * 1.6, 0.2, 0.09);
     }
 
     playSiren() {
-        if (this.disabled) return;
-
-        let time = this.ctx.currentTime;
-
-        // We could probably do a similar check here, but we typically only play bloop in
-        // response to user input, and they can only click so fast.
-
-        let note = 11;
-        let o = this.ctx.createOscillator();
-        let freq = 988/1.06**note;
-        let cents = 0;
-        o.frequency.value = freq;
-        o.frequency.exponentialRampToValueAtTime(freq * 2, time + 1.1);
-        o.type = 'sawtooth';
-        o.detune.value = cents;
-        o.connect(this.gain.click);
-        o.start(time);
-        o.stop(time + 0.65);
+        let freq = 988/1.06**11;
+        this._playOscillatorSound('siren', 'sawtooth', freq, freq * 2, 1.1, 0.65, 0.5);
     }
 }

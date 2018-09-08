@@ -189,7 +189,7 @@ class Game {
                 this.vision = this.vision.concat(Util.getVisCone(this.player, this.facing, this.fov, 4, 0, 1));
             }
 
-            this.buildAttackGrid();
+            this._buildAttackGrid();
 
             let attackers = 0;
             this.enemies.forEach(enemy => {
@@ -257,13 +257,13 @@ class Game {
             this.doors.forEach(door => door.render());
 
             // Uncomment this block to draw dashed yellow lines along the various
-            // visibility edges.
+            // visibility edges. Pretty much just for debugging.
             /*let losEdges = this.losEdges;
             this.doors.forEach(door => losEdges = losEdges.concat(door.getLosEdges()));
             losEdges.forEach(edge => {
                 this.ctx.save();
                 this.ctx.globalAlpha = 0.9;
-                this.ctx.strokeStyle = 'red';
+                this.ctx.strokeStyle = 'yellow';
                 this.ctx.setLineDash([4, 2]);
                 this.ctx.beginPath();
                 this.ctx.moveTo(this.offset.x + edge.p1.x, this.offset.y + edge.p1.y);
@@ -275,16 +275,16 @@ class Game {
             if (this.player.dead) {
                 this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 let opacity = Math.max(0, 0.8 - this.deathFrame / 40);
-                this.losCtx.fillStyle = 'rgba(0, 0, 0, ' + opacity + ')';
+                this.losCtx.fillStyle = 'rgba(0,0,0,' + opacity + ')';
                 this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             }
 
             // Next, we "render" the LOS canvas
             this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.losCtx.fillStyle = 'rgba(0,0,0,0.8)';
             this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.vision.forEach((polygon, idx) => {
-                this.losCtx.fillStyle = 'rgba(255, 255, 255, ' + polygon.opacity + ')';
+                this.losCtx.fillStyle = 'rgba(255,255,255,' + polygon.opacity + ')';
                 this.losCtx.beginPath();
                 this.losCtx.moveTo(this.offset.x + polygon[0].x, this.offset.y + polygon[0].y);
                 for (let i = 1; i < polygon.length; i++) {
@@ -295,9 +295,14 @@ class Game {
             });
             //this.losData = this.losCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
 
-            // Blit visibility
+            // Prepare to put LOS visibility on top of the canvas
             this.ctx.save();
-            //this.ctx.filter = 'blur(3px)';
+
+            // LOS Blur actually looks REALLY nice in Chrome, gives your LOS beam a flashlight effect,
+            // but it totally screws up frame rate. I'd have to really optimize the rest of my code
+            // before I could turn on blur. (Uncomment if you want to check it out.)
+            //this.ctx.filter = 'blur(6px)';
+
             // attempted: lighten, multiply, darken, source-in (darken looks best for shadows so far)
             this.ctx.globalCompositeOperation = 'darken';
             this.ctx.drawImage(this.losCanvas, 0, 0);
@@ -324,14 +329,6 @@ class Game {
             Enemy.renderAttackWarning();
 
             if (this.player.dead) {
-                /*this.losCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-                let color = Math.min(240, this.deathFrame * 4 + 50);
-                let opacity = Math.min(0.4, 0.4 + this.deathFrame / 40);
-                this.losCtx.fillStyle = 'rgba(' + color + ', 0, 0, ' + opacity + ')';
-                this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);*/
-
                 let opacity = Math.min(0.8, this.deathFrame / 40);
                 this.ctx.fillStyle = 'rgba(204, 0, 0, ' + opacity + ')';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -358,8 +355,6 @@ class Game {
             if (!this.menu) {
                 this.renderLevelText();
             }
-
-            //this.showAttackGraph2();
         }
 
         if (this.intro && !this.menu) {
@@ -526,7 +521,7 @@ class Game {
         this.crosshair.x = this.player.x + (this.level.chx || 0);
         this.crosshair.y = this.player.y + (this.level.chy || -32);
 
-        this.polygonize(this.level);
+        this._polygonizeLevel(this.level);
 
         this.enemies = [];
         this.level.e.forEach(enemyData => {
@@ -565,8 +560,8 @@ class Game {
             for(let j = 0; j < this.level.width; j++) {
                 var tile = Util.tileAtUV(j, i);
                 if (tile === 1) {
-                    this.tileCtx.drawImage(Asset.tile.wall, j * 32, i * 32);
-                    this.renderTileNoise(1, j * 32, i * 32);
+                    this.tileCtx.drawImage(Asset._tile._wall, j * 32, i * 32);
+                    this._renderTileNoise(1, j * 32, i * 32);
                 } else if (tile === 2) {
                     // Rotate floor pieces in a predictable pattern.
                     let rot = ((i * 3 + j * 7) % 4) * 90;
@@ -576,9 +571,9 @@ class Game {
                     this.tileCtx.globalAlpha = 0.81;
                     this.tileCtx.translate(j * 32 + 16, i * 32 + 16);
                     this.tileCtx.rotate(Util.d2r(rot));
-                    this.tileCtx.drawImage(Asset.tile.floor, -16, -16);
+                    this.tileCtx.drawImage(Asset._tile._floor, -16, -16);
                     this.tileCtx.restore();
-                    this.renderTileNoise(2, j * 32, i * 32);
+                    this._renderTileNoise(2, j * 32, i * 32);
                 }
             }
         }
@@ -604,7 +599,7 @@ class Game {
         return result;
     }
 
-    renderTileNoise(seed, x, y) {
+    _renderTileNoise(seed, x, y) {
         // Adding some noise makes most tiles look much more natural (easier on
         // the eyes), but it also explodes PNG size by an order of magnitude. Cheat
         // by saving the PNGs as mostly-solid-color and add noise in when we render
@@ -632,7 +627,7 @@ class Game {
     // vision-blocking area.
     //
     // (Doors are dynamic and are not included in this phase.)
-    polygonize(level) {
+    _polygonizeLevel(level) {
         var edges = {};
         var addedge = (x1,y1,x2,y2,type) => {
             let key1 = `${x1},${y1}${type}`;
@@ -735,7 +730,6 @@ class Game {
         });
     }
 
-
     handleCheatCodes() {
         // GOTOnn (nn = 01-99, number of a valid level)
         if (this.input.queue[0] >= '0' && this.input.queue[0] <= '9' &&
@@ -759,210 +753,10 @@ class Game {
         }
     }
 
-
-    // What follows is a very long commented out remnant of attack paths built by polygon,
-    // instead of by map grid. In theory, this is actually the sane way to do pathing -
-    // it works by drawing a direct line from the enemy to the player (or vice versa, doesn't
-    // really matter), detecting intersecting concerns (walls, LOS edges), and then following
-    // the intersection to both ends and repeating the process.
-    //
-    // This approach showed some promise and handled pillars and walls well, but concave corners
-    // were giving me trouble and I had to abandon it - for now! Maybe in a future game :).
-    /*
-    buildAttackGraph() {
-        return;
-
-        for (let en = 0; en < game.enemies.length; en++) {
-        let enemy = game.enemies[en];
-
-        // Get pre-calculated visibility edges
-        let edges = this.losEdges.slice(0);
-
-        // Add in dynamic visibility edges
-        this.doors.forEach(door => edges = edges.concat(door.getLosEdges()));
-
-        // Add in LOS edges
-        for (let i = 0; i < game.vision.length; i++) {
-            let polygon = game.vision[i];
-            for (let j = 0; j < polygon.length; j++) {
-                edges.push({ p1: polygon[j], p2: polygon[(j + 1) % polygon.length] });
-            }
-        }
-
-        let queue = [[{ p1: enemy, p2: game.player }]];
-        let paths = [];
-        let badpaths = [];
-
-        while (queue.length > 0) {
-            let path = queue.shift().slice(0);
-            let edge = path[path.length - 1];
-            let cuttingEdge = edge;
-            let closestEdge;
-
-            for (let i = 0; i < edges.length; i++) {
-                let sect = this.intersection(cuttingEdge, edges[i]);
-                if (sect) {
-                    closestEdge = edges[i];
-                    cuttingEdge = { p1: cuttingEdge.p1, p2: sect };
-                }
-            }
-
-            if (Util.pointSpottedXY((cuttingEdge.p2.x + cuttingEdge.p1.x) / 2, (cuttingEdge.p2.y + cuttingEdge.p1.y) / 2)) {
-                badpaths.push(path);
-                continue;
-            }
-
-            //if (distfast(cuttingEdge.p1, edge.p2) < distfast(cuttingEdge.p1, cuttingEdge.p2) ||
-            if (distance(cuttingEdge.p2, edge.p2) <= enemy.killRadius) {
-                cuttingEdge = edge;
-                closestEdge = undefined;
-            }
-
-            if (closestEdge) {
-                let normalAngle = Util.normalAngle(closestEdge);
-                let dx = Util.cos(normalAngle) * 6;
-                let dy = Util.sin(normalAngle) * 6;
-
-                cuttingEdge = {
-                    p1: cuttingEdge.p1,
-                    p2: {
-                        x: cuttingEdge.p2.x + dx,
-                        y: cuttingEdge.p2.y + dy
-                    }
-                };
-                path[path.length - 1] = cuttingEdge;
-                if (path.length > 12) {
-                    badpaths.push(path);
-                } else {
-                    let edgeAngle = Util.atanEdge(closestEdge);
-                    let ex = Util.cos(edgeAngle) * 6;
-                    let ey = Util.sin(edgeAngle) * 6;
-
-                    let p1 = closestEdge.p1;
-                    let p2 = closestEdge.p2;
-
-                    //dx = 0;
-                    //dy = 0;
-                    ex = ex;
-                    ey = ey;
-                    p1 = { x: p1.x + dx - ex, y: p1.y + dy - ey };
-                    p2 = { x: p2.x + dx + ex, y: p2.y + dy + ey };
-
-                    queue.push(path.concat([
-                        { p1: cuttingEdge.p2, p2: p1 },
-                        { p1: p1, p2: edge.p2 }
-                    ]));
-                    queue.push(path.concat([
-                        { p1: cuttingEdge.p2, p2: p2 },
-                        { p1: p2, p2: edge.p2 }
-                    ]));
-                    /*
-                    queue.push(path.concat([
-                        { p1: cuttingEdge.p2, p2: closestEdge.p1 },
-                        { p1: closestEdge.p1, p2: edge.p2 }
-                    ]));
-                    queue.push(path.concat([
-                        { p1: cuttingEdge.p2, p2: closestEdge.p2 },
-                        { p1: closestEdge.p2, p2: edge.p2 }
-                    ]));
-
-                }
-            } else {
-                paths.push(path);
-            }
-
-            //console.log(paths);
-        }
-
-        // Determine the SHORTEST path. We should add up all the edge lengths, but for now,
-        // just number of segments is probably close enough.
-        paths = paths.sort((a, b) => {
-            return b.length - a.length;
-        });
-        badpaths = badpaths.sort((a, b) => {
-            return b.length - a.length;
-        });
-        paths = paths.slice(0, 1);
-        badpaths = badpaths.slice(0, 1);
-
-        for (let i = 0; i < badpaths.length; i++) {
-            let path = badpaths[i];
-
-            game.ctx.strokeStyle = 'blue';
-            game.ctx.beginPath();
-            for(let j = 0; j < path.length; j++) {
-                game.ctx.moveTo(game.offset.x + path[j].p1.x, game.offset.y + path[j].p1.y);
-                game.ctx.lineTo(game.offset.x + path[j].p2.x, game.offset.y + path[j].p2.y);
-            }
-            game.ctx.stroke();
-        }
-
-        for (let i = 0; i < paths.length; i++) {
-            let path = paths[i];
-
-            game.ctx.strokeStyle = 'red';
-            game.ctx.beginPath();
-            for(let j = 0; j < path.length; j++) {
-                game.ctx.moveTo(game.offset.x + path[j].p1.x, game.offset.y + path[j].p1.y);
-                game.ctx.lineTo(game.offset.x + path[j].p2.x, game.offset.y + path[j].p2.y);
-            }
-            game.ctx.stroke();
-        }
-
-        enemy.attackPath = paths[0];
-        }
-        let grid = {};
-        let queue = [];
-        let density = 8;
-
-        function attemptToVisit(gx, gy, c) {
-            let x = game.player.x + gx * density;
-            let y = game.player.y + gy * density;
-
-           if (Util.wallAtXY(x, y) || Util.pointSpottedXY(x, y)) {
-            //if (Util.wallAtXY(x, y)) {
-                c = 100000;
-                grid[gx + ',' + gy] = { x, y, c };
-            } else if (!grid[gx + ',' + gy] || c < grid[gx + ',' + gy]) {
-                grid[gx + ',' + gy] = { x, y, c };
-                queue.push([gx, gy, c]);
-            }
-        };
-
-        grid["0,0"] = 0;
-        queue.push([0, 0, density]);
-
-        while (queue.length > 0) {
-            let entry = queue.shift();
-
-            attemptToVisit(entry[0] + 1, entry[1], entry[2] + density);
-            attemptToVisit(entry[0] - 1, entry[1], entry[2] + density);
-            attemptToVisit(entry[0], entry[1] + 1, entry[2] + density);
-            attemptToVisit(entry[0], entry[1] - 1, entry[2] + density);
-
-            if (Object.keys(grid).length > 1900) break;
-        }
-
-        let keys = Object.keys(grid);
-        let maxValue = 0;
-        for (let i = 0; i < keys.length; i++) {
-            let v = grid[keys[i]];
-            if (v.c === 100000) {
-                this.ctx.fillStyle = 'rgba(255, 0, 0, 255)';
-            } else {
-                maxValue = Math.max(maxValue, v.c);
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 255)';
-            }
-            this.ctx.fillRect(game.offset.x + v.x, game.offset.y + v.y, 1, 1);
-        }
-        console.log([keys.length, maxValue]);
-    }
-    */
-
     // This is what I ended up with instead, which is a basic map "flood fill". Because
     // none of my levels are very large, I didn't really have to implement an A* or
     // anything, I just do basic breadth-first search of the map.
-    buildAttackGrid() {
+    _buildAttackGrid() {
         let target = {
             x: game.player.x - Util.cos(game.facing) * 34,
             y: game.player.y - Util.sin(game.facing) * 34,
@@ -999,40 +793,6 @@ class Game {
             examine(tile[0], tile[1], tile[2]);
         }
 
-        /*while(open.length > 0) {
-            var tile = open.shift();
-            routes[tile.v * this.level.width + tile.u] = tile.c;
-
-            proc(tile.u - 1, tile.v, tile.c);
-            proc(tile.u + 1, tile.v, tile.c);
-            proc(tile.u, tile.v - 1, tile.c);
-            proc(tile.u, tile.v + 1, tile.c);
-        }*/
-
-        //console.log(routes);
         this.attackGrid = grid;
     }
-
-    /*
-    showAttackGraph2() {
-        return;
-        for (let i = 0; i < this.level.height; i++) {
-            for (let j = 0; j < this.level.width; j++) {
-                let cost = this.attackGrid[i * this.level.width + j];
-                let x = game.offset.x + j * 32;
-                let y = game.offset.y + i * 32;
-
-                if (cost >= 10000) {
-                    game.ctx.fillStyle = 'rgba(255, 0, 0, 30)';
-                    game.ctx.fillRect(x + 16 - 8, y + 16 - 8, 8, 8);
-                } else {
-                    game.ctx.fillStyle = 'rgba(0, 255, 0, 30)';
-                    game.ctx.font = '8px serif';
-                    game.ctx.fillText("" + cost, x + 2, y + 2);
-                }
-
-            }
-        }
-    }
-    */
 };

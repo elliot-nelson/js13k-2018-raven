@@ -78,9 +78,9 @@ class Door {
         //if (this.type === 'h') {
             game.ctx.save();
             game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
-            game.ctx.drawImage(Asset.tile.door, slide, 0, 32 - slide, 32, -32, -16, 32 - slide, 32);
+            game.ctx.drawImage(Asset._tile._door, slide, 0, 32 - slide, 32, -32, -16, 32 - slide, 32);
             game.ctx.rotate(Util.d2r(180));
-            game.ctx.drawImage(Asset.tile.door, slide, 0, 32 - slide, 32, -32, -16, 32 - slide, 32);
+            game.ctx.drawImage(Asset._tile._door, slide, 0, 32 - slide, 32, -32, -16, 32 - slide, 32);
 
             if (this.locked) {
                 game.ctx.fillStyle = 'rgba(204, 36, 36, 0.8)';

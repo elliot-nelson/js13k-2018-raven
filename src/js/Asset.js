@@ -1,8 +1,8 @@
 const Asset = {
-    img: {
+    _img: {
     },
 
-    tile: {
+    _tile: {
     },
 
     // Obviously, the ideal would be to bundle in an OTT or pixel art font and give every user
@@ -11,21 +11,21 @@ const Asset = {
     // However, I've tested all of these and they all "work", so this should cover us.
     fontFamily: "Monaco,'Lucida Sans Typewriter','Andale Mono','Lucida Console','Courier New',Courier,monospace",
 
-    loadImage(src) {
+    _loadImage(src) {
         const img = new Image();
         img.src = src;
         return img;
     },
 
     loadAllAssets() {
-        Asset.img.player      = Asset.loadImage('assets/player.png');
-        Asset.img.raven       = Asset.loadImage('assets/raven.png');
-        Asset.img.camera_arm  = Asset.loadImage('assets/camera_arm.png');
-        Asset.img.camera_head = Asset.loadImage('assets/camera_head.png');
-        Asset.img.terminal    = Asset.loadImage('assets/terminal.png');
-        Asset.tile.floor      = Asset.loadImage('assets/floor.png');
-        Asset.tile.wall       = Asset.loadImage('assets/wall.png');
-        Asset.tile.door       = Asset.loadImage('assets/door.png');
+        Asset._img._player      = Asset._loadImage('assets/player.png');
+        Asset._img._raven       = Asset._loadImage('assets/raven.png');
+        Asset._img._camera_arm  = Asset._loadImage('assets/camera_arm.png');
+        Asset._img._camera_head = Asset._loadImage('assets/camera_head.png');
+        Asset._img._terminal    = Asset._loadImage('assets/terminal.png');
+        Asset._tile._floor      = Asset._loadImage('assets/floor.png');
+        Asset._tile._wall       = Asset._loadImage('assets/wall.png');
+        Asset._tile._door       = Asset._loadImage('assets/door.png');
     },
 
     getFontString(pixels) {

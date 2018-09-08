@@ -1,5 +1,9 @@
 /**
  * The player class encapsulates the player's current state.
+ *
+ * ... sort of. A lot of things you'd think are player state, like where we
+ * are facing and where our crosshair is, belong to Game today. This is
+ * something I'd factor back out, maybe in the future...
  */
 class Player {
     constructor() {
@@ -20,8 +24,8 @@ class Player {
     }
 
     update(delta) {
-        // TODO
-        // Classic "fast diagonal" problem below; will fix later if I care enough.
+        // TODO: yes, the player suffers from the classic "fast diagonal" problem.
+        // This time around, I don't care enough to fix it :)
 
         if (this.dead) {
             return;
@@ -104,7 +108,7 @@ class Player {
             game.ctx.fillStyle = 'rgba(32, 32, 48, 1)';
             game.ctx.fillRect(walk, -6, 3, 3);
         }
-        game.ctx.drawImage(Asset.img.player, -10, -7);
+        game.ctx.drawImage(Asset._img._player, -10, -7);
         game.ctx.restore();
     }
 
@@ -113,7 +117,7 @@ class Player {
         game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
         game.ctx.rotate(Util.d2r(game.facing + 90));
         game.ctx.globalAlpha = 0.8;
-        game.ctx.drawImage(Asset.img.player, -16, -16);
+        game.ctx.drawImage(Asset._img._player, -16, -16);
         game.ctx.restore();
     }
 

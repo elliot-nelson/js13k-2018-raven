@@ -1,3 +1,6 @@
+/**
+ * The enemy. There is only one.
+ */
 class Enemy {
     constructor(enemyData) {
         this.x = enemyData.x;
@@ -8,18 +11,18 @@ class Enemy {
         this.ay = 10;
         this.maxSpeed = 0;
 
-        this.idleWidth = 18;
-        this.idleHeight = 30;
-        this.attackWidth = 18;
-        this.attackHeight = 6;
+        this._idleWidth = 18;
+        this._idleHeight = 30;
+        this._attackWidth = 18;
+        this._attackHeight = 6;
 
-        this.width = this.idleWidth;
-        this.height = this.idleHeight;
+        this.width = this._idleWidth;
+        this.height = this._idleHeight;
 
         this.wake = enemyData.wake || 'radius';
         this.wakeRadius = enemyData.wakeRadius || 384;
         this.killRadius = 14;
-        this.eyeQueue = [,,,,,,,,,,,,];
+        this._eyeQueue = [,,,,,,,,,,,,];
 
         this.state = 'asleep';
     }
@@ -37,7 +40,7 @@ class Enemy {
                 if (this.wake === 'radius' && Util.distance(this, game.player) < this.wakeRadius) {
                     // Default - wake when player reaches a certain radius
                     this.state = 'idle';
-                } else if (this.wake === 'los' && this.sprintToTargetAngle(0, true) !== undefined) {
+                } else if (this.wake === 'los' && this._sprintToTargetAngle(0, true) !== undefined) {
                     // Wake when player is visible to the enemy
                     this.state = 'idle';
                 }
@@ -54,7 +57,7 @@ class Enemy {
                     break;
                 }
 
-                attackAngle = this.bestAttackAngle();
+                attackAngle = this._bestAttackAngle();
 
                 if (attackAngle !== undefined) {
                     this.state = 'attack';
@@ -72,7 +75,7 @@ class Enemy {
 
                 // The player is moving too, so we still need to recalculate our
                 // angles each frame.
-                attackAngle = this.bestAttackAngle();
+                attackAngle = this._bestAttackAngle();
 
                 if (attackAngle === undefined) {
                     this.state = 'idle';
@@ -92,11 +95,11 @@ class Enemy {
         }
 
         if (this.state === 'attack') {
-            this.width = this.attackWidth;
-            this.height = this.attackHeight;
+            this.width = this._attackWidth;
+            this.height = this._attackHeight;
         } else {
-            this.width = this.idleWidth;
-            this.height = this.idleHeight;
+            this.width = this._idleWidth;
+            this.height = this._idleHeight;
         }
 
 /*            if (dist > 40) {
@@ -170,11 +173,11 @@ class Enemy {
             }
 
             game.ctx.globalAlpha = a1;
-            game.ctx.drawImage(Asset.img.raven, game.offset.x + this.x + r1 - this.width / 2, game.offset.y + this.y + r2 - this.height / 2);
+            game.ctx.drawImage(Asset._img._raven, game.offset.x + this.x + r1 - this.width / 2, game.offset.y + this.y + r2 - this.height / 2);
             game.ctx.globalAlpha = a2;
-            game.ctx.drawImage(Asset.img.raven, game.offset.x + this.x + r2 - this.width / 2, game.offset.y + this.y + r4 - this.height / 2);
+            game.ctx.drawImage(Asset._img._raven, game.offset.x + this.x + r2 - this.width / 2, game.offset.y + this.y + r4 - this.height / 2);
             game.ctx.globalAlpha = 1;
-            game.ctx.drawImage(Asset.img.raven, game.offset.x + this.x - this.width / 2, game.offset.y + this.y - this.height / 2);
+            game.ctx.drawImage(Asset._img._raven, game.offset.x + this.x - this.width / 2, game.offset.y + this.y - this.height / 2);
         }
     }
 
@@ -187,17 +190,17 @@ class Enemy {
         // are in motion, this gives just enough herky-jerk stutter to make the creature feel like
         // it is in some kind of running/crawling animation.
         if (this.state === 'attack') {
-            this.eyeQueue.push({
+            this._eyeQueue.push({
                 x: this.x + Math.cos(game.framems / 300) * 8,
                 y: this.y - 6 + Math.abs(Math.sin(game.framems / 300) * 5)
             });
         } else {
-            this.eyeQueue.push(false);
+            this._eyeQueue.push(false);
         }
-        this.eyeQueue.shift();
+        this._eyeQueue.shift();
 
-        for (let i = 0; i < this.eyeQueue.length; i++) {
-            let ec = this.eyeQueue[i];
+        for (let i = 0; i < this._eyeQueue.length; i++) {
+            let ec = this._eyeQueue[i];
             if (ec) {
                 //game.ctx.globalAlpha = 0.05 * i;
                 game.ctx.fillStyle = 'rgba(165, 10, 16, ' + (0.05 * i) + ')';
@@ -212,16 +215,16 @@ class Enemy {
         }
     }
 
-    bestAttackAngle() {
-        let angle = this.sprintToTargetAngle(0);
+    _bestAttackAngle() {
+        let angle = this._sprintToTargetAngle(0);
         if (angle === undefined) {
-            angle = this.sprintToTargetAngle(24);
+            angle = this._sprintToTargetAngle(24);
         }
         if (angle === undefined) {
-            angle = this.sprintToTargetAngle(48);
+            angle = this._sprintToTargetAngle(48);
         }
         if (angle === undefined) {
-            let attackChoice = this.lowestAttackCostUV(Math.floor(this.x / 32), Math.floor(this.y / 32));
+            let attackChoice = this._lowestAttackCostUV(Math.floor(this.x / 32), Math.floor(this.y / 32));
             if (attackChoice) {
                 angle = Util.atanPoints(this, {
                     x: attackChoice[0] * 32 + 16,
@@ -233,7 +236,7 @@ class Enemy {
         return angle;
     }
 
-    lowestAttackCostUV(u, v, iterations) {
+    _lowestAttackCostUV(u, v, iterations) {
         let options = [
             [u, v],
             [u - 1, v],
@@ -270,7 +273,7 @@ class Enemy {
         }
     }
 
-    sprintToTargetAngle(offset, ignoreVision) {
+    _sprintToTargetAngle(offset, ignoreVision) {
         let shadow = { x: this.x, y: this.y, width: this.width, height: this.height };
         let target = {
             x: game.player.x - Util.cos(game.facing) * offset,
