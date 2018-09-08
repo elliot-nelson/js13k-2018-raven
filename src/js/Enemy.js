@@ -173,11 +173,11 @@ class Enemy {
             }
 
             game.ctx.globalAlpha = a1;
-            game.ctx.drawImage(Asset._img._raven, game.offset.x + this.x + r1 - this.width / 2, game.offset.y + this.y + r2 - this.height / 2);
+            Asset.drawSprite('raven', game.ctx, game.offset.x + this.x + r1 - this.width / 2, game.offset.y + this.y + r2 - this.height / 2);
             game.ctx.globalAlpha = a2;
-            game.ctx.drawImage(Asset._img._raven, game.offset.x + this.x + r2 - this.width / 2, game.offset.y + this.y + r4 - this.height / 2);
+            Asset.drawSprite('raven', game.ctx, game.offset.x + this.x + r2 - this.width / 2, game.offset.y + this.y + r4 - this.height / 2);
             game.ctx.globalAlpha = 1;
-            game.ctx.drawImage(Asset._img._raven, game.offset.x + this.x - this.width / 2, game.offset.y + this.y - this.height / 2);
+            Asset.drawSprite('raven', game.ctx, game.offset.x + this.x - this.width / 2, game.offset.y + this.y - this.height / 2);
         }
     }
 

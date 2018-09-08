@@ -560,7 +560,7 @@ class Game {
             for(let j = 0; j < this.level.width; j++) {
                 var tile = Util.tileAtUV(j, i);
                 if (tile === 1) {
-                    this.tileCtx.drawImage(Asset._tile._wall, j * 32, i * 32);
+                    Asset.drawSprite('wall', this.tileCtx, j * 32, i * 32);
                     this._renderTileNoise(1, j * 32, i * 32);
                 } else if (tile === 2) {
                     // Rotate floor pieces in a predictable pattern.
@@ -571,7 +571,7 @@ class Game {
                     this.tileCtx.globalAlpha = 0.81;
                     this.tileCtx.translate(j * 32 + 16, i * 32 + 16);
                     this.tileCtx.rotate(Util.d2r(rot));
-                    this.tileCtx.drawImage(Asset._tile._floor, -16, -16);
+                    Asset.drawSprite('floor', this.tileCtx, -16, -16);
                     this.tileCtx.restore();
                     this._renderTileNoise(2, j * 32, i * 32);
                 }

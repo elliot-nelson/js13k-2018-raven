@@ -39,7 +39,7 @@ gulp.task('build:assets', () => {
 
 gulp.task('build:js', () => {
     let compatMode = false;
-    let debugMode = true;
+    let debugMode = false;
     let build = gulp.src('src/js/*.js')
         .pipe(add("LevelCache.js", levelPacker.packAll("src/levels/level*.json"), true))
         .pipe(sourcemaps.init())
@@ -47,7 +47,9 @@ gulp.task('build:js', () => {
         .pipe(size());
 
     if (debugMode) {
-        // do nothing
+        // do nothing; best stack traces for tricky bugs
+        // (yes, we have source maps, but my overly-aggressive mangling strategy
+        // fubars the sourcemap)
     } else if (compatMode) {
         // To generate ES5 code, for more compatibility, use babel+uglify
         build = build

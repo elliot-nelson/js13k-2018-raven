@@ -35,7 +35,7 @@ class Terminal {
         game.ctx.save();
         game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
         game.ctx.rotate(Util.d2r(this.facing));
-        game.ctx.drawImage(Asset._img._terminal, -13, -16);
+        Asset.drawSprite('terminal', game.ctx, -16, -16);
         game.ctx.fillStyle = this.enabled ? 'rgba(36, 204, 36, 0.8)' : 'rgba(204, 36, 36, 0.8)';
         game.ctx.fillRect(18 - 13, 10 - 16, 3, 3);
         game.ctx.restore();

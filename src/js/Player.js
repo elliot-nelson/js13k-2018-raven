@@ -108,7 +108,7 @@ class Player {
             game.ctx.fillStyle = 'rgba(32, 32, 48, 1)';
             game.ctx.fillRect(walk, -6, 3, 3);
         }
-        game.ctx.drawImage(Asset._img._player, -10, -7);
+        Asset.drawSprite('player', game.ctx, -10, -7);
         game.ctx.restore();
     }
 
