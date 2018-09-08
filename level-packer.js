@@ -284,7 +284,9 @@ const levelPacker = {
             a = b;
             l = 1;
         }
-        result.push(String.fromCharCode(35 + (l - 1) * 8 + a));
+        byte = 35 + (l - 1) * 8 + a;
+        if (byte >= 92) byte++;
+        result.push(String.fromCharCode(byte));
 
         return result.join('');
     }

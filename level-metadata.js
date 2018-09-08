@@ -46,6 +46,10 @@ const LevelMetadata = {
         name: '07 West Chemical Lab',
         hint: '! Most Raven will not attack you until they see you.'
     },
+    level08: {
+        name: '08 West Maintenance Corridor',
+        hint: '! Something smells foul in here.'
+    },
     outro:
         '[SEC REF 672.C]\n\n' +
         'The facility is now in code yellow, thanks to your efforts. With all cameras ' +

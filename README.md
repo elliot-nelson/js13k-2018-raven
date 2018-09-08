@@ -1,6 +1,6 @@
 # js13k-2018-raven
 
-My 2018 entry for the js13kgames compo, "Raven".
+My 2018 entry for the js13kgames competition, "Raven".
 
 ## Description
 
