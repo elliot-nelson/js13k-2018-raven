@@ -7,49 +7,48 @@
  */
 const LevelMetadata = {
     level01: {
-        name: 'Security Annex 109A',
-        hint: '! Look around with the mouse. Move with W/A/S/D.',
+        name: '01 Rear Security Annex',
+        hint: '! Look around with the mouse, move with W/A/S/D.',
         intro:
             '[SEC REF 672.A]\n\n' +
-            'Site R-7 has suffered a catastrophic breach. All units codenamed "Raven" are considered active ' +
-            'and extremely dangerous. All security monitoring is currently offline.\n\n' +
-            'When visible to you or our security team, Raven will manifest as statues. Do not turn your back ' +
-            'on these statues. Raven\'s true form remains a mystery, but we know it can attack quickly and ' +
-            'without warning when not under guard.\n\n' +
+            'Thank you for arriving quickly. As you can see, the facility has been breached, and our ' +
+            'security monitoring is offline. Containment and establishment of vision are our top priorities.\n\n' +
+            'All occupants, codenamed \'Raven\', will manifest as stationary statues when visible. Do ' +
+            'not let your guard down, as they are active and extremely dangerous.\n\n' +
             'Your mission is simple: enter the facility, bring our security cameras back online, and ' +
             'contain all active Raven. Ni pukha, ni pyera, comrade.'
     },
-    level02: {
+    level02xx: {
         name: 'Security Annex 209A',
         hint: '! Once spotted, do not look away from a Raven.',
         chx: 0,
         chy: 32
     },
-    level03: {
+    level03xx: {
         name: 'Corridor 1106',
         hint: '! Find an exit elevator to continue.'
     },
     level04: {
-        name: 'Corridor 1207',
-        hint: '! Turn on security cameras using nearby terminals.',
+        name: '02 Rear Annex Corridor',
+        hint: '! Turn on all cameras using nearby terminals to proceed.',
     },
     level05: {
-        name: 'Lobby',
-        hint: '! You must enable all security cameras to proceed.',
+        name: '03 Rear Hallway SW',
+        hint: '! Raven are immobilized if spotted by security cameras.',
         chx: 0,
         chy: 32
     },
     level06: {
-        name: 'Lobby',
-        hint: '! You must enable all security cameras to proceed.',
+        name: '04 Lobby SW',
+        hint: '! Plan a route that exposes you as little as possible.'
     },
     level07: {
-        name: 'Lobby',
-        hint: '! You must enable all security cameras to proceed.',
+        name: '05 Guest Plaza',
+        hint: ''
     },
     level08: {
-        name: 'Lobby',
-        hint: '! You must enable all security cameras to proceed.',
+        name: '06 West Lab Storage',
+        hint: '! Although dangerous, looking away can be useful.',
         chx: 0,
         chy: 32
     },

@@ -7,7 +7,7 @@ const concat = require("gulp-concat");
 const del = require("del");
 const add = require("gulp-add");
 const uglify = require('gulp-uglify');
-const uglifyes = require('gulp-uglifyes');
+const terser = require('gulp-terser');
 const imagemin = require('gulp-imagemin');
 const cleancss = require('gulp-clean-css');
 const htmlmin = require('gulp-htmlmin');
@@ -38,19 +38,42 @@ gulp.task('build:assets', () => {
 });
 
 gulp.task('build:js', () => {
-    gulp.src('src/js/*.js')
+    let compatMode = false;
+    let debugMode = true;
+    let build = gulp.src('src/js/*.js')
         .pipe(add("LevelCache.js", levelPacker.packAll("src/levels/level*.json"), true))
         .pipe(sourcemaps.init())
         .pipe(concat('app.js'))
-        .pipe(size())
+        .pipe(size());
 
-        // To generate ES5 code, for more compatibility, use babel+uglify.
-        //.pipe(babel())
-        //.pipe(uglify({ toplevel: true }))
+    if (debugMode) {
+        // do nothing
+    } else if (compatMode) {
+        // To generate ES5 code, for more compatibility, use babel+uglify
+        build = build
+            .pipe(babel())
+            .pipe(uglify({ toplevel: true }));
+    } else {
+        // For smaller ES6 code, use terser
+        build = build
+            .pipe(terser({
+                toplevel: true,
+                mangle: {
+                    properties: {
+                        // Properties beginning with "_" are private methods, which on each class
+                        // I've specified to indicate they aren't called by other objects, and can
+                        // be safely squished.
+                        //
+                        // Some key methods on Util are used a lot, so calling them out explicitly
+                        // lets us get some extra squishiness. (Actually, ideally we'd just squish
+                        // everything on Util, but I don't see a good way to do that.)
+                        regex: /^_|^wallAtXY|^wallAtUV|^pointIn|^getVisCone|^getVisBounds|^enforceEntityMovement|^renderTogglePrompt|^entitySpotted|^pointSpotted|^drawSprite/
+                    }
+                }
+            }));
+    }
 
-        // For smaller ES6 code, and just be careful what syntax you use, uglifyES
-        .pipe(uglifyes())
-
+    build = build
         .pipe(size())
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest('raven'));

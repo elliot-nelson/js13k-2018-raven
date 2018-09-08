@@ -103,7 +103,7 @@ const levelPacker = {
                     u: Math.floor(object.x / 32),
                     v: Math.floor(object.y / 32),
                     control: object.properties.Control,
-                    facing: object.properties.Facing,
+                    facing: parseFloat(object.properties.Facing),
                     enabled: object.properties.Enabled === 'true'
                 });
             }
