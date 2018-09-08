@@ -12,10 +12,12 @@ const levelPacker = {
         const levels = glob.sync(levelGlob).map(filename => levelPacker.pack(filename));
         return "const LevelCache = " + JSON.stringify(levels, undefined, 2) + ";\n";
     },
+
     pack: function (filename) {
         const raw = require("./" + filename);
         let terrainLayer, metaLayer, objectsLayer;
 
+        // We expect each level to have layers with these exact names
         for (let i = 0;  i < raw.layers.length; i++) {
             if (raw.layers[i].name === 'Terrain') {
                 terrainLayer = raw.layers[i];
@@ -33,6 +35,10 @@ const levelPacker = {
 
         let width = terrainLayer.width;
         let height = terrainLayer.height;
+
+        // The first thing we want to do is calculate the minimum width and height of the level
+        // data in the Tiled map (for ease of editing, I create all the levels in the middle of a
+        // 100x100 map, but we don't need all that cruft in the game!)
 
         const tileBounds = {
             top: terrainLayer.height,
@@ -55,6 +61,7 @@ const levelPacker = {
         width = tileBounds.right - tileBounds.left + 1;
         height = tileBounds.bottom - tileBounds.top + 1;
 
+        // After determining the new width and height, we need to translate all layers to new coords
         terrainLayer = levelPacker.cropLayer(terrainLayer, tileBounds.left, tileBounds.top, width, height);
         metaLayer = levelPacker.cropLayer(metaLayer, tileBounds.left, tileBounds.top, width, height);
         objectsLayer = levelPacker.cropLayer(objectsLayer, tileBounds.left, tileBounds.top, width, height);
@@ -85,6 +92,8 @@ const levelPacker = {
             right: 0
         };
 
+        // Process the objects in the objects layer, inserting them into the appropriate
+        // collections as we go.
         for (let i = 0; i < objectsLayer.objects.length; i++) {
             let object = objectsLayer.objects[i];
             if (object.type === "enemy") {
@@ -118,6 +127,10 @@ const levelPacker = {
             }
         }
 
+        // Process the tiles in the "meta" layer (currently, meta tiles are doors, enter, or
+        // exit markers). Technically, I designed the enter and exit areas to allow any size (like 2x3
+        // or 4x2) and the game will respect it, but the doors are hard-coded to be 2x1 tiles, so
+        // there's not much use for that flexibility atm.
         for (let i = 0; i < height; i++) {
             for (let j = 0; j < width; j++) {
                 if (metaLayer.data[i * width + j] === 3) {
@@ -146,6 +159,9 @@ const levelPacker = {
                         };
                     }
                     if (door) {
+                        // Kind of backed myself into this one... I ended up wanting to know
+                        // what "type" of door I'm interacting with. Figure it out based on
+                        // what tiles are near.
                         if (metaLayer.data[i * width + j + 1] === 4 ||
                             metaLayer.data[i * width + j - 1] === 4 ||
                             metaLayer.data[(i + 1) * width + j] === 4 ||
@@ -169,10 +185,14 @@ const levelPacker = {
             p2: { x: exitBounds.right, y: exitBounds.bottom }
         };
 
-        // The "clean up step".
+        // The "clean up step". Level data is repeated quite a few times, so
+        // maybe we'll save ourselves a few measly bytes by shortening the
+        // names of our level cache properties...
 
         level.d = level.doors;
         delete level.doors;
+        // Hack: door.type isn't implemented right now (it's always "h"), so
+        // let's just cut it.
         level.d.forEach(door => { delete door.type; });
 
         level.e = level.enemies;
@@ -186,6 +206,7 @@ const levelPacker = {
 
         return level;
     },
+
     /**
      * Return a new copy of the provided layer, where all tiles and objects
      * are repositioned to reflect a "cropped" level based on the provided
@@ -218,9 +239,26 @@ const levelPacker = {
             objects: objects
         });
     },
+
     /**
      * Smash up data as small as possible. Assumes that we have a max of EIGHT possible
      * tiles, freeing up remaining bits for length vars.
+     *
+     * Basically I'm being super weird in this function, as it's kinda-sorta just base64,
+     * but I'm optimizing for the level domain. I want to print only characters with zero
+     * side effects, which means:
+     *     35-91 (avoiding 34=" and 92=\)
+     *     93-123 (avoiding 92=\, 123 is just the highest multiple)
+     *
+     * I give myself 0-7 for the tile value, and add (8 * number of tiles), subtracting
+     * 1 because I don't need a 0 length run. That lets me pack up to 11 tiles into 1 byte,
+     * with no "double-byte" processing nonsense, and no binary-to-ascii back and forth.
+     *
+     * Having it be totally custom kind of sucks, but this seems to be the best bang for my
+     * buck with the smallest possible unpacking code (every LOC you need to unpack on the
+     * other side eats into your packing savings...).
+     *
+     * NOTE: Obviously, any edits to this function must also be reflected in Game._unpackData()!
      */
     packData(data) {
         let result = [];
@@ -229,7 +267,7 @@ const levelPacker = {
         for (let i = 1; i < data.length; i++) {
             b = data[i];
 
-            if (a > 7) throw new Error("cannot pack level: byte>7");
+            if (a > 7) throw new Error("cannot pack level: tile value>7");
 
             if (b === a && l < 11) {
                 l++;

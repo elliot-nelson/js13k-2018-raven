@@ -57,6 +57,12 @@ Math resource (is a point within a known triangle?).
 
 More math resources; two different explanations of the same algorithm for determining if a point lies within a polygon. (I find that this comes up a lot, and not just in games either, so it's a nice tool to have at your fingertips).
 
+* [Tiled Map Editor](https://www.mapeditor.org/)
+
+I used Tiled to create all of the levels for this game, and overall I was pretty pleased. I have to say it wasn't a perfect match, some of the things I wanted to do regarding enemies and cameras and terminals felt kind of difficult to do, but I think that was my experience level more than the tool itself.
+
+I ended up implementing a relatively serious post-processing step for the Tiled levels, to get them compact enough to include in the final app bundle, and this is where I merge in the rest of my level metadata as well.
+
 * [miniMusic](https://xem.github.io/miniMusic/)
 
 A very small music generator. The music for this game was composed on the "advanced" miniMusic composer. I ended up making a lot of changes to the generated javascript, but the original audio snippet came right from Maxime's generator.
@@ -64,4 +70,3 @@ A very small music generator. The music for this game was composed on the "advan
 * [Web Audio, the ugly click and the human ear](http://alemangui.github.io/blog//2015/12/26/ramp-to-value.html)
 
 Excellent article that gives a couple ways to prevent oscillator "clicks". Your ears will thank you.
-

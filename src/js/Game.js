@@ -511,7 +511,7 @@ class Game {
     load(levelIndex) {
         this.levelIndex = levelIndex;
         this.level = Object.assign({}, LevelCache[levelIndex]);
-        this.level.data = this.unpackData(this.level.data);
+        this.level.data = this._unpackData(this.level.data);
         this.levelComplete = false;
 
         let eb = this.level.enter;
@@ -588,7 +588,7 @@ class Game {
         this.renderPrep = false;
     }
 
-    unpackData(data) {
+    _unpackData(data) {
         let result = [], v, c, l;
         for (let i = 0; i < data.length; i++) {
             v = data.charCodeAt(i) - 35;
