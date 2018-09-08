@@ -24,6 +24,15 @@ class Enemy {
         this.killRadius = 14;
         this._eyeQueue = [,,,,,,,,,,,,];
 
+        if (enemyData.patrolDX !== undefined && enemyData.patrolDY !== undefined) {
+            this.patrol = [
+                { x: this.x, y: this.y },
+                { x: this.x + enemyData.patrolDX, y: this.y + enemyData.patrolDY }
+            ];
+            this.patrol.next = 1;
+            this.patrol.after = game.framems + 1000;
+        }
+
         this.state = 'asleep';
     }
 
@@ -37,13 +46,43 @@ class Enemy {
 
         switch (this.state) {
             case 'asleep':
-                if (this.wake === 'radius' && Util.distance(this, game.player) < this.wakeRadius) {
+                if (spotted) {
+                    // Being seen by anything immediately freezes the statue, and it
+                    // begin idling after it is unfrozen.
+                    this.state = 'frozen';
+                } else if (this.wake === 'radius' && Util.distance(this, game.player) < this.wakeRadius) {
                     // Default - wake when player reaches a certain radius
                     this.state = 'idle';
                 } else if (this.wake === 'los' && this._sprintToTargetAngle(0, true) !== undefined) {
                     // Wake when player is visible to the enemy
                     this.state = 'idle';
+                } else {
+                    // "Asleep" is turning out not to be a good name for this state!
+                    if (this.patrol && game.framems > this.patrol.after) {
+                        let target = this.patrol[this.patrol.next];
+                        if (this.x === target.x && this.y === target.y) {
+                            console.log("got it");
+                            this.patrol.after = game.framems + 1000;
+                            this.patrol.next = (this.patrol.next + 1) % this.patrol.length;
+                        } else {
+                            let angle = Util.atanPoints(this, target);
+                            let dist = Util.distance(this, target);
+                            console.log([dist, delta, 50 * delta]);
+                            if (50 * delta > dist) {
+                                this.vx = 0;
+                                this.vy = 0;
+                                this.x = target.x;
+                                this.y = target.y;
+                            } else {
+                                this.vx = Util.cos(angle) * 50;
+                                this.vy = Util.sin(angle) * 50;
+                                this.x += this.vx * delta;
+                                this.y += this.vy * delta;
+                            }
+                        }
+                    }
                 }
+
                 break;
             case 'idle':
                 // TODO: It would be cool if enemies would strategically move around
@@ -141,7 +180,7 @@ class Enemy {
     }
 
     render() {
-        if (this.state !== 'attack') {
+        if (this.state !== 'attack' && (this.state !== 'asleep' || (this.vx === 0 && this.vy === 0))) {
             let jitter = game.framems - this.frozenms;
             let r1, r2, r3, r4, a1, a2;
 
@@ -178,6 +217,12 @@ class Enemy {
             Asset.drawSprite('raven', game.ctx, game.offset.x + this.x + r2 - this.width / 2, game.offset.y + this.y + r4 - this.height / 2);
             game.ctx.globalAlpha = 1;
             Asset.drawSprite('raven', game.ctx, game.offset.x + this.x - this.width / 2, game.offset.y + this.y - this.height / 2);
+        } else if (this.state === 'asleep' && this.patrol) {
+            if (Math.random() > 0.9) {
+                game.ctx.globalAlpha = 0.4;
+                Asset.drawSprite('raven', game.ctx, game.offset.x + this.x - this.width/2, game.offset.y + this.y - this.height / 2);
+                game.ctx.globalAlpha = 1;
+            }
         }
     }
 
@@ -189,7 +234,7 @@ class Enemy {
         // this gives the impression of a hulking, breathing creature in the room; when the eyes
         // are in motion, this gives just enough herky-jerk stutter to make the creature feel like
         // it is in some kind of running/crawling animation.
-        if (this.state === 'attack') {
+        if (this.state === 'attack' || (this.state === 'asleep' && this.patrol && (this.vx !== 0 || this.vy !== 0))) {
             this._eyeQueue.push({
                 x: this.x + Math.cos(game.framems / 300) * 8,
                 y: this.y - 6 + Math.abs(Math.sin(game.framems / 300) * 5)

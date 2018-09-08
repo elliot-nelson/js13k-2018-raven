@@ -18,49 +18,39 @@ const LevelMetadata = {
             'Your mission is simple: enter the facility, bring our security cameras back online, and ' +
             'contain all active Raven. Ni pukha, ni pyera, comrade.'
     },
-    level02xx: {
-        name: 'Security Annex 209A',
-        hint: '! Once spotted, do not look away from a Raven.',
-        chx: 0,
-        chy: 32
-    },
-    level03xx: {
-        name: 'Corridor 1106',
-        hint: '! Find an exit elevator to continue.'
-    },
-    level04: {
+    level02: {
         name: '02 Rear Annex Corridor',
         hint: '! Turn on all cameras using nearby terminals to proceed.',
     },
-    level05: {
+    level03: {
         name: '03 Rear Hallway SW',
         hint: '! Raven are immobilized if spotted by security cameras.',
         chx: 0,
         chy: 32
     },
-    level06: {
+    level04: {
         name: '04 Lobby SW',
         hint: '! Plan a route that exposes you as little as possible.'
     },
-    level07: {
-        name: '05 Guest Plaza',
-        hint: ''
+    level05: {
+        name: '05 Mezzanine',
+        hint: '! Some Raven are more active than others.'
     },
-    level08: {
+    level06: {
         name: '06 West Lab Storage',
-        hint: '! Although dangerous, looking away can be useful.',
+        hint: '! Although dangerous, looking away may be a useful ruse.',
         chx: 0,
         chy: 32
     },
-    level09: {
-        name: 'Badofjfoeof',
-        hint: ''
+    level07: {
+        name: '07 West Chemical Lab',
+        hint: '! Most Raven will not attack you until they see you.'
     },
     outro:
         '[SEC REF 672.C]\n\n' +
-        'Site R-7 is now a code yellow, thanks to your efforts. With all security cameras ' +
-        'back online, secondary cleanup crews will finish the job with little danger. No ' +
-        'Raven have escaped the facility during this operation.\n\n' +
+        'The facility is now in code yellow, thanks to your efforts. With all cameras ' +
+        'back online, secondary cleanup crews will finish the job with minimal danger. We ' +
+        'are pleased to report that no Raven escaped during the operation.\n\n' +
         'You are cleared to leave. Do svidaniya, comrade...'
 };
 

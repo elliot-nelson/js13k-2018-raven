@@ -95,6 +95,8 @@ const levelPacker = {
                 if (object.properties) {
                     if (object.properties.Wake) enemy.wake = object.properties.Wake;
                     if (object.properties.WakeRadius) enemy.wakeRadius = parseInt(object.properties.WakeRadius, 10);
+                    if (object.properties.PatrolDX) enemy.patrolDX = parseInt(object.properties.PatrolDX, 10);
+                    if (object.properties.PatrolDY) enemy.patrolDY = parseInt(object.properties.PatrolDY, 10);
                 }
                 level.enemies.push(enemy);
             }
