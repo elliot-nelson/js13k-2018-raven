@@ -22,16 +22,26 @@ class Audio {
         // Create a gain node for each sound type we'll be playing.
         this._sounds = {};
         [
-            ['click', 0.1],
-            ['bloop', 0.5],
-            ['siren', 0.1],
-            ['tri',   0.5],
-            ['music', 0.4]
+            ['click',  0.1],
+            ['bloop',  0.5],
+            ['siren',  0.1],
+            ['tri',    0.5],
+            ['music',  0.4],
+            ['m1',     1, 'music'],
+            ['m2',     1, 'music'],
+            ['m3',     1, 'music']
         ].forEach(data => {
             this._sounds[data[0]] = this.ctx.createGain();
             this._sounds[data[0]].gain.value = data[1];
-            this._sounds[data[0]].connect(this.ctx.destination);
+            this._sounds[data[0]].connect(data[2] ? this._sounds[data[2]] : this.ctx.destination);
         });
+
+        // We rotate musical notes between 3 separate gain nodes, so we can control gain on
+        // each note without breaking other notes. Note that m1, m2, and m3 are
+        // our "0-1" individual note nodes, which are hooked up to the overall "music" node
+        // at 0.4 gain, which is then hooked up to the destination node.
+        this._musicNodes = [this._sounds.m1, this._sounds.m2, this._sounds.m3];
+        this._musicIndex = 0;
 
         // Used to track the most recent play of a sound.
         this._last = {
@@ -179,10 +189,13 @@ class Audio {
             }
         }
 
-        // Each frame, schedule some notes if we're less than a second away from when
-        // the next note should be played.
+        // Each frame, schedule some notes if we're close to where the note should be played.
+        // The longer the time comparison here, the more "buffer" you have, but the longer
+        // it takes to react e.g. to play death music.
         if (this._nextTick - this.ctx.currentTime < 0.2) {
-            this._scheduleForTick(this._track, this._tick, this._nextTick, this._tickLength, this._sounds.music);
+            this._musicIndex = (this._musicIndex + 1) % this._musicNodes.length;
+            let node = this._musicNodes[this._musicIndex];
+            this._scheduleForTick(this._track, this._tick, this._nextTick, this._tickLength, node);
             this._tick++;
 
             // If we go into the background, the Audio Context's currentTime will keep increasing,
@@ -214,28 +227,15 @@ class Audio {
             o.connect(dest);
             o.start(nextTick);
 
-            // When to "stop" this note turns out to be surprisingly important; the obvious value is just
-            // (start + note length), but there's a lot of ugly clicking at the end of each note. See
-            // http://alemangui.github.io/blog//2015/12/26/ramp-to-value.html for an explanation. Unlike
-            // the author's solution, though, I don't want to mess around with gain ramping because
-            // we have a whole bunch of other notes to play, so instead, we try to land the "end" of the
-            // oscillation at a multiple of (1/freq), where we'll be at 0, for a clean note exit.
-            //
-            // TODO: This is frustrating because I'd like to play with, for example, detuning and frequency
-            // modulation (gives a creepy jewelry box sound); however, changing +/-cents on my note
-            // changes the frequency, and my note length calculation becomes invalid. I should be modulating
-            // the gain instead at the end of the note, but it interferes with the next note. Needs more
-            // research, I guess...
-            //
-            // Future note: a good way to handle this situation is to set gain to "1" at nextTick, and set
-            // exponential ramp to near-zero at nextTick+noteLength, and use a rotating series of gain nodes
-            // for notes (3 should be plenty).
-            //
-            // If we DO use cents, take it into account (to find the real zero point).
-            // let rfreq = freq * Math.pow(2, cents / 1200);
-
-            // Basically "noteLength -= noteLength % rfreq", except it doesn't end up being zero.
-            noteLength = Math.floor(noteLength * freq) / freq;
+            // Safari as a browser is exceptionally "clicky", so it's a good truth test. Here we create
+            // an envelope where 5% of the note length is linear 0-1 ramp, then we play 90% of the note
+            // at volume 1, and then the last 5% of the note length is linear 1-0 ramp. You could also
+            // use exponential ramp and 0.01 or 0.001 as volume, but I couldn't get Safari to stop clicking,
+            // so a linear ramp it is.
+            dest.gain.setValueAtTime(0,          nextTick);
+            dest.gain.linearRampToValueAtTime(1, nextTick + noteLength * 0.05);
+            dest.gain.setValueAtTime(1,          nextTick + noteLength * 0.95);
+            dest.gain.linearRampToValueAtTime(0, nextTick + noteLength);
 
             o.stop(nextTick + noteLength);
         }
@@ -248,15 +248,15 @@ class Audio {
         if (timeSinceLast && time - this._last[channel] < timeSinceLast) return;
         this._last[channel] = time;
 
-        let o = this.ctx.createOscillator();
-        o.frequency.value = freq;
-        if (rampFreq) {
-            // Too gross in Firefox and Safari.
-            //o.frequency.exponentialRampToValueAtTime(rampFreq, time + rampTime);
+        // Important: on any browser but Chrome, setting ".value" and using ramps are NOT
+        // COMPATIBLE! For any AudioParam, if you want to use exponential/linear ramp
+        // functions, make sure you set your value using setValueAtTime, and not explicitly
+        // setting value.
 
-            // Linear ramp still basically doesn't work in Firefox and Safari, but at least
-            // it makes a recognizable noise.
-            o.frequency.linearRampToValueAtTime(rampFreq, time + rampTime);
+        let o = this.ctx.createOscillator();
+        o.frequency.setValueAtTime(freq, time);
+        if (rampFreq) {
+            o.frequency.exponentialRampToValueAtTime(rampFreq, time + rampTime);
         }
         o.type = type;
         o.connect(this._sounds[channel]);
