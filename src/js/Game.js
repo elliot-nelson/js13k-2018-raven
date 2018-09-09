@@ -792,6 +792,7 @@ class Game {
     // actually useful for playing. (Actually, I think cheat codes are kind of a fun
     // easter egg, but I needed those extra bytes!)
     _handleCheatCodes() {
+        /*
         // GOTOnn (nn = 01-99, number of a valid level)
         if (this.input.queue[0] >= '0' && this.input.queue[0] <= '9' &&
             this.input.queue[1] >= '0' && this.input.queue[1] <= '9' &&
@@ -812,6 +813,7 @@ class Game {
             this.playerDied();
             this.input.queue = [];
         }
+        */
     }
 
     // This is what I ended up with instead, which is a basic map "flood fill". Because

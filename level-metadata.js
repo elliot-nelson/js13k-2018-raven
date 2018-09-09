@@ -47,14 +47,18 @@ const LevelMetadata = {
         hint: '! Most Raven will not attack you until they see you.'
     },
     level08: {
-        name: '08 West Maintenance Corridor',
-        hint: '! Something smells foul in here.'
+        name: '08 Maintenance Corridor',
+        hint: ''
     },
     level09: {
-        name: '09 Front Annex Corridor',
-        hint: '! The dry cleaners have misplaced my favorite slacks.',
+        name: '09 Front Annex',
+        hint: '',
         chx: 0,
         chy: 32
+    },
+    level10: {
+        name: '10 Facility Parking',
+        hint: '! So many choices...'
     },
     outro:
         '[SEC REF 672.C]\n\n' +
