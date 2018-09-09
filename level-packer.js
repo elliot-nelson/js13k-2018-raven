@@ -10,7 +10,8 @@ const LevelMetadata = require('./level-metadata');
 const levelPacker = {
     packAll: function (levelGlob) {
         const levels = glob.sync(levelGlob).map(filename => levelPacker.pack(filename));
-        return "const LevelCache = " + JSON.stringify(levels, undefined, 2) + ";\n";
+        return "const LevelCache = " + JSON.stringify(levels, undefined, 2) + ";\n" +
+            "LevelCache.outro = " + JSON.stringify(LevelMetadata.outro) + ";\n";
     },
 
     pack: function (filename) {
@@ -106,6 +107,7 @@ const levelPacker = {
                     if (object.properties.WakeRadius) enemy.wakeRadius = parseInt(object.properties.WakeRadius, 10);
                     if (object.properties.PatrolDX) enemy.patrolDX = parseInt(object.properties.PatrolDX, 10);
                     if (object.properties.PatrolDY) enemy.patrolDY = parseInt(object.properties.PatrolDY, 10);
+                    if (object.properties.PatrolStart) enemy.patrolStart = parseInt(object.properties.PatrolStart, 10);
                 }
                 level.enemies.push(enemy);
             }

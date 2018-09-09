@@ -42,7 +42,7 @@ Like every other tutorial on Red Blob, this one is super cool, and in some ways 
 
 * [Grid pathfinding optimizations](https://www.redblobgames.com/pathfinding/grids/algorithms.html)
 
-Speaking of Amit's articles... To be honest, almost _none_ of the advice in this article is implemented in this game, as time and space (ie lines of code) were not on my side. But I did reference this article frequently while working on the enemy AI, and if I ever work on the game post-competition, the enemies could probably get much smarter.
+Speaking of Amit's articles... To be honest, very little of the the advice in this article is implemented in this game, as time and space (ie lines of code) were not on my side. But I did reference this article frequently while working on the enemy AI, and if I ever work on the game post-competition, the enemies could probably get much smarter.
 
 * [Line intersection and its applications](https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/)
 
@@ -65,8 +65,13 @@ I ended up implementing a relatively serious post-processing step for the Tiled 
 
 * [miniMusic](https://xem.github.io/miniMusic/)
 
-A very small music generator. The music for this game was composed on the "advanced" miniMusic composer. I ended up making a lot of changes to the generated javascript, but the original audio snippet came right from Maxime's generator.
+A small and simple music generator for the Web Audio API. The music for this game was composed on the "advanced" miniMusic composer. I ended up making a lot of changes to the generated javascript, but the original audio snippet came right from Maxime's generator.
 
 * [Web Audio, the ugly click and the human ear](http://alemangui.github.io/blog//2015/12/26/ramp-to-value.html)
 
 Excellent article that gives a couple ways to prevent oscillator "clicks". Your ears will thank you.
+
+* [AdvanceCOMP](http://www.advancemame.it/download)
+
+Additional compression tools that are quite nice for a competition like this (it's linked to on the js13kgames resources page as well). My experience is that the imagemin tool is already quite good, so `advpng` will likely only save you a handful of bytes, if any. However, `advzip` is great at squeezing those last 100 bytes out of your zip file, when you've already squeezed everything else you can.
+

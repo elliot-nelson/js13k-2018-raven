@@ -50,12 +50,19 @@ const LevelMetadata = {
         name: '08 West Maintenance Corridor',
         hint: '! Something smells foul in here.'
     },
+    level09: {
+        name: '09 Front Annex Corridor',
+        hint: '! The dry cleaners have misplaced my favorite slacks.',
+        chx: 0,
+        chy: 32
+    },
     outro:
         '[SEC REF 672.C]\n\n' +
         'The facility is now in code yellow, thanks to your efforts. With all cameras ' +
         'back online, secondary cleanup crews will finish the job with minimal danger. We ' +
         'are pleased to report that no Raven escaped during the operation.\n\n' +
-        'You are cleared to leave. Do svidaniya, comrade...'
+        'You are cleared to leave. Do svidaniya, comrade...\n\n' +
+        'YOU WIN'
 };
 
 module.exports = LevelMetadata;

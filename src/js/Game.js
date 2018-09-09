@@ -125,6 +125,14 @@ class Game {
             this.intro.update(delta);
             if (this.intro.state === 'dead') {
                 this.intro = undefined;
+                if (this.level) {
+                    // A "level" intro naturally transitions into the next level.
+                    // No action needed.
+                } else {
+                    // If there's no level, then this is actually the outro, and
+                    // the next step is the main menu.
+                    this.openMenu(this.startMenu);
+                }
             }
             this.levelms = performance.now();
             this.danger = 0;
@@ -135,6 +143,13 @@ class Game {
 
             if (this.levelComplete && (this.framems - this.levelCompleteMs) > 2200) {
                 this.pendingLevelIndex = this.levelIndex + 1;
+                if (this.pendingLevelIndex >= LevelCache.length) {
+                    this.pendingLevelIndex = undefined;
+                    this.level = undefined;
+                    this.intro = new Intro(LevelCache.outro);
+                    this.renderPrep = false;
+                    return;
+                }
             }
 
             this.player.update(delta);
@@ -330,12 +345,27 @@ class Game {
             Enemy.renderAttackWarning();
 
             if (this.player.dead) {
-                let opacity = Math.min(0.8, this.deathFrame / 40);
+                let mult = Math.min(1, this.deathFrame / 100);
+                let b = -75 + mult * (this.canvas.height + 100);
+
+                // A poor man's "blood splatter"
+                this.ctx.fillStyle = 'rgba(204,0,0,0.8)';
+                for (let i = 0; i < this.canvas.width; i++) {
+                    this.ctx.fillRect(i, 0, 1,
+                        b + Math.abs(Math.cos(i / 29) * 30 +
+                        Math.sin(0.5 + i / 22) * 40 * mult +
+                        Math.cos(i / 19) * 50 * mult +
+                        Math.sin(i / 13) * 60 * mult +
+                        Math.cos(i / 7) * 30 * mult)
+                    );
+                }
+
+                /*let opacity = Math.min(0.8, this.deathFrame / 40);
                 this.ctx.fillStyle = 'rgba(204, 0, 0, ' + opacity + ')';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);*/
 
                 let size = Math.min(80, 20 + this.deathFrame / 5);
-                opacity = Math.min(0.5, this.deathFrame / 50);
+                let opacity = Math.min(0.5, this.deathFrame / 50);
                 this.ctx.font = Asset.getFontString(size);
                 let x = this.canvas.width / 2 - this.ctx.measureText('YOU ARE DEAD').width / 2;
                 this.ctx.fillStyle = 'rgba(255, 255, 255, ' + opacity + ')';

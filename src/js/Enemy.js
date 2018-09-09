@@ -30,7 +30,8 @@ class Enemy {
                 { x: this.x + enemyData.patrolDX, y: this.y + enemyData.patrolDY }
             ];
             this.patrol.next = 1;
-            this.patrol.after = game.framems + 1000;
+            console.log(enemyData.patrolStart);
+            this.patrol.after = game.framems + 1000 + (enemyData.patrolStart || 0);
         }
 
         this.state = 'asleep';
@@ -61,13 +62,11 @@ class Enemy {
                     if (this.patrol && game.framems > this.patrol.after) {
                         let target = this.patrol[this.patrol.next];
                         if (this.x === target.x && this.y === target.y) {
-                            console.log("got it");
                             this.patrol.after = game.framems + 1000;
                             this.patrol.next = (this.patrol.next + 1) % this.patrol.length;
                         } else {
                             let angle = Util.atanPoints(this, target);
                             let dist = Util.distance(this, target);
-                            console.log([dist, delta, 50 * delta]);
                             if (50 * delta > dist) {
                                 this.vx = 0;
                                 this.vy = 0;
@@ -140,74 +139,40 @@ class Enemy {
             this.width = this._idleWidth;
             this.height = this._idleHeight;
         }
-
-/*            if (dist > 40) {
-                // This is a very simple way to get "behind" the player -- for every 3 degrees
-                // off from the player's facing, move our target 1 pixel back. So, if we're
-                // directly behind the player, just lunge at them; if we're 45 degrees to the side,
-                // aim 15 pixels behind them.
-                let target = {
-                    x: game.player.x - (angleDiff / 3) * Math.cos(Util.d2r(game.facing)),
-                    y: game.player.y - (angleDiff / 3) * Math.sin(Util.d2r(game.facing))
-                };
-                angle = Util.r2d(Math.atan2(target.y - this.y, target.x - this.x));
-            }*/
-
-            /*this.vx += Math.cos(Util.d2r(angle)) * this.attackAccel * delta;
-            this.vy += Math.sin(Util.d2r(angle)) * this.attackAccel * delta;
-
-            console.log([angle, this.vx, this.vy]);
-            let vel = distance({ x: 0, y: 0 }, { x: this.vx, y: this.vy });
-            if (vel > this.attackVel) {
-                vel = this.attackVel;
-            }
-            angle = Math.atan2(this.vy, this.vx);
-            this.vx = Math.cos(angle) * vel;
-            this.vy = Math.sin(angle) * vel;
-            console.log([angle, this.vx, this.vy]);*/
-
-            /*this.vx = Math.cos(Util.d2r(attackAngle)) * this.attackVel;
-            this.vy = Math.sin(Util.d2r(attackAngle)) * this.attackVel;
-
-            this.x += this.vx * delta;
-            this.y += this.vy * delta;*/
-            //console.log([this.x, this.y]);
-
-            /*var d = distance(game.player, this);
-            if (d < 10) {
-                this.state = 'idle';
-            }*/
     }
 
     render() {
         if (this.state !== 'attack' && (this.state !== 'asleep' || (this.vx === 0 && this.vy === 0))) {
             let jitter = game.framems - this.frozenms;
-            let r1, r2, r3, r4, a1, a2;
+            let r1, r2, r3, r4, a1, a2, a3;
 
             // When you first spot a statue, it is immediately agitated, but
             // calms down (that is, becomes less conspicuous) over a couple seconds.
             // However, even after a long period, there should be a slight shakiness
             // to the statue.
             if (jitter < 300) {
-                [r1, r2, r3, r4, a1, a2] = [
+                [r1, r2, r3, r4, a1, a2, a3] = [
                     Util.rf(11) - 5, Util.rf(11) - 5,
                     Util.rf(7) - 3, Util.rf(7) - 3,
                     0.4,
-                    0.7
+                    0.7,
+                    1
                 ];
             } else if (jitter < 600) {
-                [r1, r2, r3, r4, a1, a2] = [
+                [r1, r2, r3, r4, a1, a2, a3] = [
                     Util.rf(7) - 3, Util.rf(7) - 3,
                     Util.rf(5) - 2, Util.rf(5) - 2,
                     0.3,
-                    0.6
+                    0.6,
+                    1
                 ];
             } else {
-                [r1, r2, r3, r4, a1, a2] = [
+                [r1, r2, r3, r4, a1, a2, a3] = [
                     Util.rf(5) - 2, Util.rf(5) - 2,
                     Util.rf(3) - 1, Util.rf(3) - 1,
                     0.1,
-                    0.2
+                    0.2,
+                    1
                 ];
             }
 
@@ -215,9 +180,13 @@ class Enemy {
             Asset.drawSprite('raven', game.ctx, game.offset.x + this.x + r1 - this.width / 2, game.offset.y + this.y + r2 - this.height / 2);
             game.ctx.globalAlpha = a2;
             Asset.drawSprite('raven', game.ctx, game.offset.x + this.x + r2 - this.width / 2, game.offset.y + this.y + r4 - this.height / 2);
-            game.ctx.globalAlpha = 1;
+            game.ctx.globalAlpha = a3;
             Asset.drawSprite('raven', game.ctx, game.offset.x + this.x - this.width / 2, game.offset.y + this.y - this.height / 2);
+            game.ctx.globalAlpha = 1;
         } else if (this.state === 'asleep' && this.patrol) {
+            // TODO: This is lazy. Ideally, instead of "showing" the statue 10% of the time while
+            // moving on patrol, we would instead sync up a Math.sin on framems, so that the statue
+            // fades in and out smoothly based on the movement of the eyes.
             if (Math.random() > 0.9) {
                 game.ctx.globalAlpha = 0.4;
                 Asset.drawSprite('raven', game.ctx, game.offset.x + this.x - this.width/2, game.offset.y + this.y - this.height / 2);
@@ -233,7 +202,7 @@ class Enemy {
         // still, they would "swing" like a pendulum from one side to another. Although it's subtle,
         // this gives the impression of a hulking, breathing creature in the room; when the eyes
         // are in motion, this gives just enough herky-jerk stutter to make the creature feel like
-        // it is in some kind of running/crawling animation.
+        // it is in some kind of running/walking animation.
         if (this.state === 'attack' || (this.state === 'asleep' && this.patrol && (this.vx !== 0 || this.vy !== 0))) {
             this._eyeQueue.push({
                 x: this.x + Math.cos(game.framems / 300) * 8,
@@ -261,6 +230,36 @@ class Enemy {
     }
 
     _bestAttackAngle() {
+        // What is happening here?
+        //
+        // First, we try to draw a direct line from us to the player, without hitting an obstacle
+        // or an LOS cone. If that doesn't work, we do the same thing again, but 24 pixels BEHIND
+        // the player (based on current facing). If that doesn't work, once more, but 48 pixels
+        // BEHIND the player.
+        //
+        // If none of that direct attack stuff worked, use the attack grid generated on each frame
+        // (using standard flood fill, in Game.js) to pick the closest tile that would bring us
+        // closest the player, and move to it. Note that the attack grid will only propogate
+        // tiles it believes can reach the player without being seen, so lowestAttackCost will
+        // return undefined if the player can see us or any tile in the way.
+        //
+        // This actually works pretty well and makes the enemy dangerous! There are some tweaks I'd
+        // like to make, though.
+        //
+        // Biggest: "Behind" the player is too strict, it makes backing up to a wall too powerful of an
+        // option. A lot of the time, if the enemy is (say) 90 degrees to my right, and I'm 40
+        // pixels in front of a wall, the enemy could easily aim for a tile 48 degrees behind me
+        // at a 30 degree angle, and then swoop in to get me; but it won't, because 24p
+        // hits my LOS, and 48p is in a wall.
+        //
+        // Secondary: the attack grid isn't perfect, it basically checks the center of each tile,
+        // which is why sometimes the enemy "attacks" and slams into a security camera. In an ideal
+        // world, the enemy would never voluntarily place itself into a situation it can't get
+        // back out of.
+        //
+        // If I could calculate the best angle between nearest player obstacle and LOS cone, the
+        // enemy could make even more "surprise" attacks on the player when they make a mistake.
+
         let angle = this._sprintToTargetAngle(0);
         if (angle === undefined) {
             angle = this._sprintToTargetAngle(24);
