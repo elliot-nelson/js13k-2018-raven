@@ -94,6 +94,53 @@ class Player {
     }
 
     render() {
+        if (this.dead) {
+            // TODO: A really awesome, Hotline Miami blood splatter would be cool here.
+            // I think that will need to wait til a different game.
+            // (Really, the thing to do here is just draw a nice "blood splatter" sprite,
+            // but I don't have the space!)
+
+            let pal = [
+                // 10% shining white bone
+                [204,204,204],
+                // 10% gristle
+                [54,10,10],
+                // 50% pure power of will
+                // oops, i meant, shades of blood
+                [239,17,35],
+                [211,15,31],
+                [171,12,15],
+                [120,6,6]
+            ];
+
+            if (!this._bloodSplatter) {
+                this._bloodSplatter = [];
+
+                for (let i = 0; i < 45; i++) {
+                    let x = Math.floor(Math.random() * 30);
+                    let y = Math.floor(Math.random() * 30);
+                    let color = Math.floor(Math.random() * pal.length);
+
+                    this._bloodSplatter[y * 30 + x] = color;
+                }
+            }
+
+            game.ctx.save();
+            game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
+            for (let i = 0; i < 30; i++) {
+                for(let j = 0; j < 30; j++) {
+                    let color = this._bloodSplatter[i * 30 + j];
+                    if (color) {
+                        color = pal[color];
+                        game.ctx.fillStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
+                        game.ctx.fillRect(i - 15, j - 15, 2, 2);
+                    }
+                }
+            }
+            game.ctx.restore();
+            return;
+        }
+
         // Walking animation frames would be great, but let's hack it.
         // Actual walking images would be nice, but a filled dark grey
         // rectangle will need to take the place of a shoe, this time.
@@ -108,15 +155,6 @@ class Player {
             game.ctx.fillRect(walk, -6, 3, 3);
         }
         Asset.drawSprite('player', game.ctx, -10, -7);
-        game.ctx.restore();
-    }
-
-    renderPost() {
-        game.ctx.save();
-        game.ctx.translate(game.offset.x + this.x, game.offset.y + this.y);
-        game.ctx.rotate(Util.d2r(game.facing + 90));
-        game.ctx.globalAlpha = 0.8;
-        game.ctx.drawImage(Asset._img._player, -16, -16);
         game.ctx.restore();
     }
 

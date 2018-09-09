@@ -11,17 +11,6 @@ const Util = {
         return Util.atan(p2.y - p1.y, p2.x - p1.x);
     },
 
-    atanEdge(edge) {
-        return Util.atanPoints(edge.p1, edge.p2);
-    },
-
-    normalAngle(edge) {
-        // This function works only for edges that are clockwise (floor on left). We
-        // take pains throughout to make sure we save edges this way so we can make
-        // this assumption.
-        return (Util.atanEdge(edge) + 90) % 360;
-    },
-
     // cos (degrees)
     cos(d) {
         return Math.cos(Util.d2r(d));
@@ -47,11 +36,6 @@ const Util = {
         return (d + 720) % 360;
     },
 
-    // Return true if given angle is "between" (clockwise) two other angles
-    angleWithin(angle, b1, b2) {
-        return Util.dw(angle - b1) < Util.dw(b2 - b1);
-    },
-
     // rand floor
     rf(x) {
         return Math.floor(Math.random() * x);
@@ -62,13 +46,9 @@ const Util = {
     //
 
     distance(p1, p2) {
-        return Math.sqrt(Util.distfast(p1, p2));
-    },
-
-    distfast(p1, p2) {
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
-        return dx * dx + dy * dy;
+        let dx = p2.x - p1.x;
+        let dy = p2.y - p1.y;
+        return Math.sqrt(dx * dx + dy * dy);
     },
 
     pointNearPoint(p1, p2, range) {
@@ -150,7 +130,6 @@ const Util = {
     },
 
     // Calculating visibility
-
 
     // Math wizards everywhere, avert your eyes...
     // https://www.topcoder.com/community/data-science/data-science-tutorials/geometry-concepts-line-intersection-and-its-applications/
