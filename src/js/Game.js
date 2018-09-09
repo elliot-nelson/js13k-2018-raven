@@ -30,10 +30,7 @@ class Game {
                 up: this.onEscape.bind(this)
             },
             mousemove: this.onMouseMove.bind(this),
-            mouseclick: this.onMouseClick.bind(this),
-            kill: () => {
-                this.playerDied();
-            }
+            mouseclick: this.onMouseClick.bind(this)
         }).init();
 
         this.audio = new Audio();
@@ -89,20 +86,21 @@ class Game {
         document.addEventListener('mozpointerlockchange', this.onMouseLock.bind(this));
         document.addEventListener('webkitpointerlockchange', this.onMouseLock.bind(this));
 
-        let startOptions = [
-            {
-                text: 'START NEW GAME',
-                handler: () => {
-                    this._pendingLevelIndex = 0;
-                    this.unpause();
+        this._startMenu = new Menu(
+            [
+                {
+                    text: 'START NEW GAME',
+                    handler: () => {
+                        this._pendingLevelIndex = 0;
+                        this.unpause();
+                    }
                 }
-            }
-        ];
+            ],
+            () => false
+        );
 
-        // When the game loads, if you had previously reached a level other than
-        // the first level, you get a different set of options in the main menu.
-        if (this._startLevel > 0) {
-            startOptions = [
+        this._continueMenu = new Menu(
+            [
                 {
                     text: 'CONTINUE GAME',
                     handler: () => {
@@ -117,11 +115,7 @@ class Game {
                         this.unpause();
                     }
                 }
-            ];
-        }
-
-        this._startMenu = new Menu(
-            startOptions,
+            ],
             () => false
         );
 
@@ -166,7 +160,8 @@ class Game {
                     // No action needed.
                 } else {
                     // If there's no level, then this is actually the outro, and
-                    // the next step is the main menu.
+                    // the next step is the main menu. Note we always open the Start Menu,
+                    // because there will be no continuing.
                     this.openMenu(this._startMenu);
                 }
             }
@@ -178,12 +173,13 @@ class Game {
 
             if (this.levelComplete && (this.framems - this.levelCompleteMs) > 2200) {
                 this._pendingLevelIndex = this.levelIndex + 1;
-                console.log(['next level', this._pendingLevelIndex]);
                 if (this._pendingLevelIndex >= LevelCache.length) {
                     this._pendingLevelIndex = undefined;
                     this.level = undefined;
                     this.intro = new Intro(LevelCache.outro);
+                    this.intro.update(delta);
                     this._renderPrep = false;
+                    this._startLevel = 0;
                     if (!this._storageDisabled) localStorage.setItem('level', 0);
                     return;
                 } else {
@@ -466,7 +462,11 @@ class Game {
     }
 
     start() {
-        this.openMenu(this._startMenu);
+        if (this._startLevel > 0) {
+            this.openMenu(this._continueMenu);
+        } else {
+            this.openMenu(this._startMenu);
+        }
         window.requestAnimationFrame(this.frame.bind(this));
     }
 
@@ -788,6 +788,9 @@ class Game {
         });
     }
 
+    // Cheat codes are disabled for submission. They are more of a development tool than
+    // actually useful for playing. (Actually, I think cheat codes are kind of a fun
+    // easter egg, but I needed those extra bytes!)
     _handleCheatCodes() {
         // GOTOnn (nn = 01-99, number of a valid level)
         if (this.input.queue[0] >= '0' && this.input.queue[0] <= '9' &&
@@ -801,12 +804,12 @@ class Game {
                 this._pendingLevelIndex = undefined;
             }
             this.input.queue = [];
+        // DEAD
         } else if (this.input.queue[0] === 'd' &&
-                   this.input.queue[1] === 'q' &&
-                   this.input.queue[2] === 'd' &&
-                   this.input.queue[3] === 'd' &&
-                   this.input.queue[4] === 'i') {
-            this.godmode = !this.godmode;
+                   this.input.queue[1] === 'a' &&
+                   this.input.queue[2] === 'e' &&
+                   this.input.queue[3] === 'd') {
+            this.playerDied();
             this.input.queue = [];
         }
     }

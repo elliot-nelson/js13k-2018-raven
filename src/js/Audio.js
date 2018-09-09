@@ -251,7 +251,12 @@ class Audio {
         let o = this.ctx.createOscillator();
         o.frequency.value = freq;
         if (rampFreq) {
-            o.frequency.exponentialRampToValueAtTime(rampFreq, time + rampTime);
+            // Too gross in Firefox and Safari.
+            //o.frequency.exponentialRampToValueAtTime(rampFreq, time + rampTime);
+
+            // Linear ramp still basically doesn't work in Firefox and Safari, but at least
+            // it makes a recognizable noise.
+            o.frequency.linearRampToValueAtTime(rampFreq, time + rampTime);
         }
         o.type = type;
         o.connect(this._sounds[channel]);

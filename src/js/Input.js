@@ -19,7 +19,6 @@ class Input {
         this.map[32] = 'toggle';   // Space
         this.map[13] = 'toggle';   // Enter
         this.map[27] = 'escape';   // Escape
-        this.map[75] = 'kill';     // Kill
 
         // TODO: A nice extension would be to have key remapping, which isn't that
         // hard - make the above settings configurable, add in a Keys menu, etc. etc.
@@ -70,7 +69,6 @@ class Input {
                 this[k] = undefined;
 
                 if (this.handlers[k] && typeof this.handlers[k].up === 'function') {
-                    console.log("UP");
                     this.handlers[k].up();
                 }
             }
@@ -81,7 +79,8 @@ class Input {
         });
 
         document.addEventListener('click', event => {
-            // TODO: Do we care where they clicked? or we just assume it clicks where mouse was
+            // TODO: Today, we just treat a click as a click (like pressing spacebar).
+            // This can be a little weird if the user clicks without ever moving the mouse.
             this.handlers['mouseclick']();
         });
 

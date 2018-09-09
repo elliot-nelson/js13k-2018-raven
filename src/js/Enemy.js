@@ -25,13 +25,12 @@ class Enemy {
         this._eyeQueue = [,,,,,,,,,,,,];
 
         if (enemyData.patrolDX !== undefined && enemyData.patrolDY !== undefined) {
-            this.patrol = [
+            this._patrol = [
                 { x: this.x, y: this.y },
                 { x: this.x + enemyData.patrolDX, y: this.y + enemyData.patrolDY }
             ];
-            this.patrol.next = 1;
-            console.log(enemyData.patrolStart);
-            this.patrol.after = game.framems + 1000 + (enemyData.patrolStart || 0);
+            this._patrol.next = 1;
+            this._patrol.after = game.framems + 1000 + (enemyData.patrolStart || 0);
         }
 
         this.state = 'asleep';
@@ -59,11 +58,11 @@ class Enemy {
                     this.state = 'idle';
                 } else {
                     // "Asleep" is turning out not to be a good name for this state!
-                    if (this.patrol && game.framems > this.patrol.after) {
-                        let target = this.patrol[this.patrol.next];
+                    if (this._patrol && game.framems > this._patrol.after) {
+                        let target = this._patrol[this._patrol.next];
                         if (this.x === target.x && this.y === target.y) {
-                            this.patrol.after = game.framems + 1000;
-                            this.patrol.next = (this.patrol.next + 1) % this.patrol.length;
+                            this._patrol.after = game.framems + 1000;
+                            this._patrol.next = (this._patrol.next + 1) % this._patrol.length;
                         } else {
                             let angle = Util.atanPoints(this, target);
                             let dist = Util.distance(this, target);
@@ -183,7 +182,7 @@ class Enemy {
             game.ctx.globalAlpha = a3;
             Asset.drawSprite('raven', game.ctx, game.offset.x + this.x - this.width / 2, game.offset.y + this.y - this.height / 2);
             game.ctx.globalAlpha = 1;
-        } else if (this.state === 'asleep' && this.patrol) {
+        } else if (this.state === 'asleep' && this._patrol) {
             // TODO: This is lazy. Ideally, instead of "showing" the statue 10% of the time while
             // moving on patrol, we would instead sync up a Math.sin on framems, so that the statue
             // fades in and out smoothly based on the movement of the eyes.
@@ -203,7 +202,7 @@ class Enemy {
         // this gives the impression of a hulking, breathing creature in the room; when the eyes
         // are in motion, this gives just enough herky-jerk stutter to make the creature feel like
         // it is in some kind of running/walking animation.
-        if (this.state === 'attack' || (this.state === 'asleep' && this.patrol && (this.vx !== 0 || this.vy !== 0))) {
+        if (this.state === 'attack' || (this.state === 'asleep' && this._patrol && (this.vx !== 0 || this.vy !== 0))) {
             this._eyeQueue.push({
                 x: this.x + Math.cos(game.framems / 300) * 8,
                 y: this.y - 6 + Math.abs(Math.sin(game.framems / 300) * 5)
