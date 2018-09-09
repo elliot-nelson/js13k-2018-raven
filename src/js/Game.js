@@ -7,13 +7,13 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.canvasBounds = this.canvas.getBoundingClientRect();
 
-        this.losCanvas = document.getElementById('los');
-        this.losCanvas.width = this.canvas.width;
-        this.losCanvas.height = this.canvas.height;
-        this.losCtx = this.losCanvas.getContext('2d');
+        this._losCanvas = document.getElementById('los');
+        this._losCanvas.width = this.canvas.width;
+        this._losCanvas.height = this.canvas.height;
+        this._losCtx = this._losCanvas.getContext('2d');
 
-        this.tileCanvas = document.getElementById('tile');
-        this.tileCtx = this.tileCanvas.getContext('2d');
+        this._tileCanvas = document.getElementById('tile');
+        this._tileCtx = this._tileCanvas.getContext('2d');
 
         Asset.loadAllAssets();
 
@@ -38,6 +38,21 @@ class Game {
 
         this.audio = new Audio();
 
+        // Check whether local storage is writable.
+        // Why not typeof()? See https://stackoverflow.com/questions/11214404/how-to-detect-if-browser-supports-html5-local-storage
+        try {
+            localStorage.setItem('lc', 7);
+            localStorage.removeItem('lc');
+        } catch (e) {
+            this._storageDisabled = true;
+        }
+
+        if (this._storageDisabled) {
+            this._startLevel = 0;
+        } else {
+            this._startLevel = parseInt(localStorage.getItem('level') || '0', 10);
+        }
+
         this.level = undefined;
         this.intro = undefined;
         this.player = undefined;
@@ -46,7 +61,6 @@ class Game {
 
         this.framems = 0;
         this.enemies = [];
-        this.danger = 0;
 
         this.crosshair = { x: 0, y: 0 };
         this.mouse = { x: 0, y: 0 };
@@ -70,25 +84,48 @@ class Game {
 
         this.mouselocked = false;
         this.paused = true;
-        this.renderPrep = true;
+        this._renderPrep = true;
         document.addEventListener('pointerlockchange', this.onMouseLock.bind(this));
         document.addEventListener('mozpointerlockchange', this.onMouseLock.bind(this));
         document.addEventListener('webkitpointerlockchange', this.onMouseLock.bind(this));
 
-        this.startMenu = new Menu(
-            [
+        let startOptions = [
+            {
+                text: 'START NEW GAME',
+                handler: () => {
+                    this._pendingLevelIndex = 0;
+                    this.unpause();
+                }
+            }
+        ];
+
+        // When the game loads, if you had previously reached a level other than
+        // the first level, you get a different set of options in the main menu.
+        if (this._startLevel > 0) {
+            startOptions = [
                 {
-                    text: 'START',
+                    text: 'CONTINUE GAME',
                     handler: () => {
-                        this.pendingLevelIndex = 0;
+                        this._pendingLevelIndex = this._startLevel;
+                        this.unpause();
+                    }
+                },
+                {
+                    text: 'START NEW GAME',
+                    handler: () => {
+                        this._pendingLevelIndex = 0;
                         this.unpause();
                     }
                 }
-            ],
+            ];
+        }
+
+        this._startMenu = new Menu(
+            startOptions,
             () => false
         );
 
-        this.pauseMenu = new Menu(
+        this._pauseMenu = new Menu(
             [
                 {
                     text: 'RESUME',
@@ -99,7 +136,7 @@ class Game {
                 {
                     text: 'RESTART LEVEL',
                     handler: () => {
-                        this.pendingLevelIndex = this.levelIndex;
+                        this._pendingLevelIndex = this.levelIndex;
                         this.unpause();
                     }
                 }
@@ -111,16 +148,15 @@ class Game {
     }
 
     update(delta) {
-        if (typeof this.pendingLevelIndex !== 'undefined') {
-            this.load(this.pendingLevelIndex);
-            this.pendingLevelIndex = undefined;
+        if (typeof this._pendingLevelIndex !== 'undefined') {
+            this._load(this._pendingLevelIndex);
+            this._pendingLevelIndex = undefined;
         }
 
         this.audio.update(delta);
 
         if (this.menu) {
             this.menu.update(delta);
-            this.danger = 0;
         } else if (this.intro) {
             this.intro.update(delta);
             if (this.intro.state === 'dead') {
@@ -131,24 +167,27 @@ class Game {
                 } else {
                     // If there's no level, then this is actually the outro, and
                     // the next step is the main menu.
-                    this.openMenu(this.startMenu);
+                    this.openMenu(this._startMenu);
                 }
             }
             this.levelms = performance.now();
-            this.danger = 0;
         } else if (this.level) {
             if (this.player.dead) {
                 this.deathFrame++;
             }
 
             if (this.levelComplete && (this.framems - this.levelCompleteMs) > 2200) {
-                this.pendingLevelIndex = this.levelIndex + 1;
-                if (this.pendingLevelIndex >= LevelCache.length) {
-                    this.pendingLevelIndex = undefined;
+                this._pendingLevelIndex = this.levelIndex + 1;
+                console.log(['next level', this._pendingLevelIndex]);
+                if (this._pendingLevelIndex >= LevelCache.length) {
+                    this._pendingLevelIndex = undefined;
                     this.level = undefined;
                     this.intro = new Intro(LevelCache.outro);
-                    this.renderPrep = false;
+                    this._renderPrep = false;
+                    if (!this._storageDisabled) localStorage.setItem('level', 0);
                     return;
+                } else {
+                    if (!this._storageDisabled) localStorage.setItem('level', this._pendingLevelIndex);
                 }
             }
 
@@ -206,11 +245,7 @@ class Game {
 
             this._buildAttackGrid();
 
-            let attackers = 0;
-            this.enemies.forEach(enemy => {
-                enemy.update(delta);
-                if (enemy.state === 'attack') attackers++;
-            });
+            this.enemies.forEach(enemy => enemy.update(delta));
             this.enemies.forEach(enemy => Util.enforceEntityMovement(enemy));
 
             if (!this.player.dead) {
@@ -226,7 +261,7 @@ class Game {
                         activeTerminal = terminal;
                     }
                 });
-                this.activeTerminal = activeTerminal;
+                this._activeTerminal = activeTerminal;
 
                 if (!this.levelComplete && Util.pointInBounds(this.player, this.level.exit)) {
                     this.levelComplete = true;
@@ -235,24 +270,17 @@ class Game {
                 }
             }
 
-            this.renderPrep = true;
-            if (safe) {
-                this.danger = 0;
-            } else if (attackers > 0) {
-                this.danger = 2;
-            } else {
-                this.danger = 1;
-            }
+            this._renderPrep = true;
         }
 
-        this.handleCheatCodes();
+        this._handleCheatCodes();
     }
 
     render() {
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        if (this.level && this.renderPrep && !this.intro) {
+        if (this.level && this._renderPrep && !this.intro) {
             if (this.player.dead) {
                 let scale = Math.min(3, 1 + this.deathFrame / 50);
                 this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
@@ -264,7 +292,7 @@ class Game {
             // "Draw" the pre-rendered level onto the canvas. Normally here we'd loop through
             // level width and height, drawing each tile, but that many drawImage calls is
             // way too slow.
-            this.ctx.drawImage(this.tileCanvas, this.offset.x, this.offset.y);
+            this.ctx.drawImage(this._tileCanvas, this.offset.x, this.offset.y);
 
             this.terminals.forEach(terminal => terminal.render());
             this.enemies.forEach(enemy => enemy.render());
@@ -289,27 +317,26 @@ class Game {
             });*/
 
             if (this.player.dead) {
-                this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this._losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 let opacity = Math.max(0, 0.8 - this.deathFrame / 40);
-                this.losCtx.fillStyle = 'rgba(0,0,0,' + opacity + ')';
-                this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this._losCtx.fillStyle = 'rgba(0,0,0,' + opacity + ')';
+                this._losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             }
 
             // Next, we "render" the LOS canvas
-            this.losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.losCtx.fillStyle = 'rgba(0,0,0,0.8)';
-            this.losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this._losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this._losCtx.fillStyle = 'rgba(0,0,0,0.8)';
+            this._losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.vision.forEach((polygon, idx) => {
-                this.losCtx.fillStyle = 'rgba(255,255,255,' + polygon.opacity + ')';
-                this.losCtx.beginPath();
-                this.losCtx.moveTo(this.offset.x + polygon[0].x, this.offset.y + polygon[0].y);
+                this._losCtx.fillStyle = 'rgba(255,255,255,' + polygon.opacity + ')';
+                this._losCtx.beginPath();
+                this._losCtx.moveTo(this.offset.x + polygon[0].x, this.offset.y + polygon[0].y);
                 for (let i = 1; i < polygon.length; i++) {
-                    this.losCtx.lineTo(this.offset.x + polygon[i].x, this.offset.y + polygon[i].y);
+                    this._losCtx.lineTo(this.offset.x + polygon[i].x, this.offset.y + polygon[i].y);
                 }
-                this.losCtx.closePath();
-                this.losCtx.fill();
+                this._losCtx.closePath();
+                this._losCtx.fill();
             });
-            //this.losData = this.losCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
 
             // Prepare to put LOS visibility on top of the canvas
             this.ctx.save();
@@ -321,14 +348,14 @@ class Game {
 
             // attempted: lighten, multiply, darken, source-in (darken looks best for shadows so far)
             this.ctx.globalCompositeOperation = 'darken';
-            this.ctx.drawImage(this.losCanvas, 0, 0);
+            this.ctx.drawImage(this._losCanvas, 0, 0);
             this.ctx.restore();
 
             if (!this.player.dead) {
                 this.player.renderCrosshair();
 
                 // Interactivity indicator
-                if (this.activeTerminal) {
+                if (this._activeTerminal) {
                     Util.renderTogglePrompt(this.offset.x + this.player.x - 18, this.offset.y + this.player.y + 18);
                 }
             }
@@ -439,7 +466,7 @@ class Game {
     }
 
     start() {
-        this.openMenu(this.startMenu);
+        this.openMenu(this._startMenu);
         window.requestAnimationFrame(this.frame.bind(this));
     }
 
@@ -481,9 +508,9 @@ class Game {
         } else if (this.intro) {
             this.intro.toggle();
         } else if (this.player.dead) {
-            this.pendingLevelIndex = this.levelIndex;
+            this._pendingLevelIndex = this.levelIndex;
         } else {
-            let activeTerminal = this.activeTerminal;
+            let activeTerminal = this._activeTerminal;
             if (activeTerminal) {
                 activeTerminal.toggle();
             }
@@ -514,7 +541,7 @@ class Game {
         } else {
             this.mouselocked = false;
             this.paused = true;
-            this.openMenu(this.pauseMenu);
+            this.openMenu(this._pauseMenu);
         }
     }
 
@@ -534,11 +561,11 @@ class Game {
         if (this.menu) {
             this.menu.select();
         } else if (this.player.dead) {
-            this.pendingLevelIndex = this.levelIndex;
+            this._pendingLevelIndex = this.levelIndex;
         }
     }
 
-    load(levelIndex) {
+    _load(levelIndex) {
         this.levelIndex = levelIndex;
         this.level = Object.assign({}, LevelCache[levelIndex]);
         this.level.data = this._unpackData(this.level.data);
@@ -582,28 +609,28 @@ class Game {
         // Pre-render static level. Rendering the entire tiled map ahead of time
         // saves us hundreds-thousands of drawImage calls per frame, which according
         // to Chrome perf is the biggest CPU hit in this game.
-        this.tileCanvas.width = this.level.width * 32;
-        this.tileCanvas.height = this.level.height * 32;
-        this.tileCtx.fillStyle = 'black';
-        this.tileCtx.fillRect(0, 0, this.level.width * 32, this.level.height * 32);
+        this._tileCanvas.width = this.level.width * 32;
+        this._tileCanvas.height = this.level.height * 32;
+        this._tileCtx.fillStyle = 'black';
+        this._tileCtx.fillRect(0, 0, this.level.width * 32, this.level.height * 32);
 
         for (let i = 0; i < this.level.height; i++) {
             for(let j = 0; j < this.level.width; j++) {
                 var tile = Util.tileAtUV(j, i);
                 if (tile === 1) {
-                    Asset.drawSprite('wall', this.tileCtx, j * 32, i * 32);
+                    Asset.drawSprite('wall', this._tileCtx, j * 32, i * 32);
                     this._renderTileNoise(1, j * 32, i * 32);
                 } else if (tile === 2) {
                     // Rotate floor pieces in a predictable pattern.
                     let rot = ((i * 3 + j * 7) % 4) * 90;
 
-                    this.tileCtx.save();
+                    this._tileCtx.save();
                     // Totally cheating... mute the floor a little bit.
-                    this.tileCtx.globalAlpha = 0.81;
-                    this.tileCtx.translate(j * 32 + 16, i * 32 + 16);
-                    this.tileCtx.rotate(Util.d2r(rot));
-                    Asset.drawSprite('floor', this.tileCtx, -16, -16);
-                    this.tileCtx.restore();
+                    this._tileCtx.globalAlpha = 0.81;
+                    this._tileCtx.translate(j * 32 + 16, i * 32 + 16);
+                    this._tileCtx.rotate(Util.d2r(rot));
+                    Asset.drawSprite('floor', this._tileCtx, -16, -16);
+                    this._tileCtx.restore();
                     this._renderTileNoise(2, j * 32, i * 32);
                 }
             }
@@ -615,7 +642,7 @@ class Game {
             this.levelms = performance.now();
         }
 
-        this.renderPrep = false;
+        this._renderPrep = false;
     }
 
     _unpackData(data) {
@@ -644,8 +671,8 @@ class Game {
                     r = g = b = Util.rf(256);
                     a = Util.rf(0.2 * 100) / 100;
                     w = 1;
-                    this.tileCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
-                    this.tileCtx.fillRect(x + j, y + i, w, 1);
+                    this._tileCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+                    this._tileCtx.fillRect(x + j, y + i, w, 1);
                 }
             }
         }
@@ -761,7 +788,7 @@ class Game {
         });
     }
 
-    handleCheatCodes() {
+    _handleCheatCodes() {
         // GOTOnn (nn = 01-99, number of a valid level)
         if (this.input.queue[0] >= '0' && this.input.queue[0] <= '9' &&
             this.input.queue[1] >= '0' && this.input.queue[1] <= '9' &&
@@ -769,9 +796,9 @@ class Game {
             this.input.queue[3] === 't' &&
             this.input.queue[4] === 'o' &&
             this.input.queue[5] === 'g') {
-            this.pendingLevelIndex = parseInt(this.input.queue[1] + this.input.queue[0], 10) - 1;
-            if (this.pendingLevelIndex >= LevelCache.length || this.pendingLevelIndex < 0) {
-                this.pendingLevelIndex = undefined;
+            this._pendingLevelIndex = parseInt(this.input.queue[1] + this.input.queue[0], 10) - 1;
+            if (this._pendingLevelIndex >= LevelCache.length || this._pendingLevelIndex < 0) {
+                this._pendingLevelIndex = undefined;
             }
             this.input.queue = [];
         } else if (this.input.queue[0] === 'd' &&

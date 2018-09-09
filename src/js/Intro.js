@@ -1,17 +1,17 @@
 class Intro {
     constructor(text) {
-        this.text = text;
-        this.duration = 0;
-        this.charsPerSecond = 56;
+        this._text = text;
+        this._duration = 0;
+        this._charsPerSecond = 56;
 
         this.state = 'alive';
     }
 
     update(delta) {
-        this.duration += delta;
-        this.chars = Math.min(this.text.length, this.duration * this.charsPerSecond);
+        this._duration += delta;
+        this._chars = Math.min(this._text.length, this._duration * this._charsPerSecond);
 
-        if (this.chars !== this.text.length) {
+        if (this._chars !== this._text.length) {
             // Text "scroll" audio effect
             game.audio.playClick();
         }
@@ -21,7 +21,7 @@ class Intro {
         game.ctx.font = Asset.getFontString(18);
         game.ctx.fillStyle = 'rgba(204, 255, 204, 0.9)';
 
-        let text = this.text.substring(0, this.chars);
+        let text = this._text.substring(0, this._chars);
         let lines = text.split('\n');
 
         for (let i = 0; i < lines.length; i++) {
@@ -42,17 +42,17 @@ class Intro {
         }
 
         // Interactivity indicator
-        if (this.chars === this.text.length) {
+        if (this._chars === this._text.length) {
             Util.renderTogglePrompt(game.canvas.width - 20, game.canvas.height - 20);
         }
     }
 
     toggle() {
-        if (this.chars === this.text.length) {
+        if (this._chars === this._text.length) {
             this.state = 'dead';
             game.audio.playBloop();
         } else {
-            this.duration = 10000;
+            this._duration = 10000;
             game.audio.playBloop();
         }
     }
