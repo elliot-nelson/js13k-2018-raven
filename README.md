@@ -6,7 +6,7 @@ My 2018 entry for the js13kgames competition, "Raven".
 
 In this 2D top-down action-puzzle game, the security cameras for a secret facility have been taken offline, and it is YOUR job to fix the problem. Take on a series of floors overrun by mysterious enemies known only as "Raven" -- although harmless as long as you can see them, they are deadly if you turn your back.
 
-Playable on the desktop in Chrome, Firefox, and Safari (although the experience in Safari is not quite as nice). Use your mouse to look around, and W/A/S/D or the arrow keys to move.
+Playable on the desktop in Chrome, Firefox, and Safari. Use your mouse or touchpad to look around, and W/A/S/D or the arrow keys to move.
 
 Good luck!
 
@@ -20,9 +20,15 @@ To rebuild, `npm install && gulp build` from the project folder.
 
 Build the zip file with `gulp zip`, or to get the smallest possible size, `gulp zip:pre && gulp zip && gulp zip:post`. Using the `pre` and `post` steps requires additional tools (`advpng` and `advzip`, from http://www.advancemame.it/download).
 
-## Implementation notes
+## Inspiration
 
-Coming soon...
+As implemented in the game, the Raven are very similar to the infamous [Weeping Angels](http://tardis.wikia.com/wiki/Weeping_Angel), although my original idea was actually based on the similar [SCP-173](http://www.scp-wiki.net/scp-173). Either way, I knew that I wanted my game to be heavily based on what you were looking at, with your line of sight being your only "weapon" against creatures that were very dangerous when you weren't looking at them.
+
+Overall I'm pretty pleased with how it turned out! The enemy behavior in certain corner cases could use some love, and you can imagine some extra stuff that would spice the levels up (security cameras that move, terminals that open doors instead of turning on cameras, enemies that patrol even after spotting you, better "pack attacks" - intentionally splitting up to cover more attack angles, etc.). Of course, if the enemy evolved, the player would need to evolve too -- maybe by having a mobile "partner" they could toss onto the ground that can look around a corner for a few seconds, or adding a sprint button...
+
+## Implementation notes & lessons learned
+
+Coming soon!
 
 ## References
 
