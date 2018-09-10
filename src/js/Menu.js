@@ -1,8 +1,12 @@
+/**
+ * Menu represents a generic "menu" interface, customized by providing a number of text
+ * options and handlers that contorl the behavior when clicked. Menus can be standalone
+ * (like the start menu) or overlay an active level.
+ */
 class Menu {
     constructor(options, escapeHandler) {
         this._options = options.slice(0);
-        this.escapeHandler = escapeHandler;
-
+        this._escapeHandler = escapeHandler;
         this._selected = 0;
     }
 
@@ -17,7 +21,7 @@ class Menu {
     render() {
         let entryHeight = 36;
 
-        game.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        game.ctx.fillStyle = 'rgba(0,0,0,0.7)';
         game.ctx.fillRect(0, 0, game.canvas.width, game.canvas.height);
 
         let menuTop = game.canvas.height / 2 - this._options.length * (entryHeight * 0.75);
@@ -37,7 +41,7 @@ class Menu {
             if (idx === this._selected && this.scale === 0) {
                 game.ctx.fillStyle = 'rgba(255,255,255,1)';
             } else {
-                game.ctx.fillStyle = 'rgba(204, 204, 204, 1)';
+                game.ctx.fillStyle = 'rgba(204,204,204,1)';
             }
             game.ctx.fillText(entry.text, entry.x, entry.y);
         });
@@ -56,7 +60,7 @@ class Menu {
     }
 
     onEscape() {
-        this.escapeHandler();
+        this._escapeHandler();
     }
 
     onMouseMove(x, y) {

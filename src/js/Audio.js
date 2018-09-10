@@ -1,13 +1,5 @@
 /**
- * My attempt at an audio controller.
- *
- * The gist here is, we'll create some metadata for 3 "tracks" of music (each
- * track is just a sequence of oscillator nodes). Create 3 individual gain nodes,
- * for volume control, and attach everything up.
- *
- * Updating the audio controller involves checking whether we're near the end of
- * a track (if we are, schedule another loop of it), plus updating any volume
- * knobs as appropriate.
+ * Audio handles background music and sound effects.
  */
 class Audio {
     constructor() {

@@ -1,3 +1,6 @@
+/**
+ * Asset handles images (drawn from a sprite sheet) and font strings.
+ */
 const Asset = {
     _sprites: {
         camera_arm: {
@@ -56,7 +59,7 @@ const Asset = {
     // the same experience.
     //
     // However, I've tested all of these and they all "work", so this should cover us.
-    fontFamily: "Monaco,'Lucida Sans Typewriter','Andale Mono','Lucida Console','Courier New',Courier,monospace",
+    _fontFamily: "Monaco,'Lucida Sans Typewriter','Andale Mono','Lucida Console','Courier New',Courier,monospace",
 
     _loadImage(src) {
         const img = new Image();
@@ -83,6 +86,6 @@ const Asset = {
     },
 
     getFontString(pixels) {
-        return '' + pixels + 'px ' + Asset.fontFamily;
+        return '' + pixels + 'px ' + Asset._fontFamily;
     }
 };

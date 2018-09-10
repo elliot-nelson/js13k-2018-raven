@@ -76,7 +76,7 @@ gulp.task('build:js', () => {
                         // Some key methods on Util are used a lot, so calling them out explicitly
                         // lets us get some extra squishiness. (Actually, ideally we'd just squish
                         // everything on Util, but I don't see a good way to do that.)
-                        regex: /^_|^wallAt|^tileAt|^doorAt|^pointIn|^getVisCone|^getVisBounds|^enforceEntityMovement|^renderTogglePrompt|^entitySpotted|^pointSpotted|^drawSprite|^distance/
+                        regex: /^_|^wallAt|^tileAt|^doorAt|^pointIn|^getVisCone|^getVisBounds|^enforceEntityMovement|^renderTogglePrompt|^entitySpotted|^pointSpotted|^drawSprite|^distance|^getFontString/
                     }
                 }
             }));

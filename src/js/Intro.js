@@ -1,3 +1,7 @@
+/**
+ * Intro handles overlay "level text" - like intro and outro text played in scrolling
+ * style. The user can skip through the scrolling by tapping spacebar/enter.
+ */
 class Intro {
     constructor(text) {
         this._text = text;
@@ -19,16 +23,15 @@ class Intro {
 
     render() {
         game.ctx.font = Asset.getFontString(18);
-        game.ctx.fillStyle = 'rgba(204, 255, 204, 0.9)';
+        game.ctx.fillStyle = 'rgba(204,255,204,0.9)';
 
         let text = this._text.substring(0, this._chars);
         let lines = text.split('\n');
 
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i];
-            let length;
 
-            while ((length = game.ctx.measureText(line).width) > game.canvas.width - 30) {
+            while (game.ctx.measureText(line).width > game.canvas.width - 30) {
                 line = line.split(' ').slice(0, -1).join(' ');
             }
 

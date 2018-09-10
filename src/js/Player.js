@@ -54,7 +54,7 @@ class Player {
                 this.vy = this._maxSpeed;
             }
         } else {
-            var dir = this.vy > 0 ? -1 : 1;
+            let dir = this.vy > 0 ? -1 : 1;
             this.vy += this._decel * dir * delta;
             if (this.vy < 0 && dir === -1 || this.vy > 0 && dir === 1) {
                 this.vy = 0;
@@ -71,7 +71,7 @@ class Player {
                 this.vx = this._maxSpeed;
             }
         } else {
-            var dir = this.vx > 0 ? -1 : 1;
+            let dir = this.vx > 0 ? -1 : 1;
             this.vx += this._decel * dir * delta;
             if (this.vx < 0 && dir === -1 || this.vx > 0 && dir === 1) {
                 this.vx = 0;

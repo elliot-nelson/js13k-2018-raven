@@ -1,4 +1,5 @@
 const glob = require('glob');
+const util = require('util');
 const LevelMetadata = require('./level-metadata');
 
 /**
@@ -10,7 +11,10 @@ const LevelMetadata = require('./level-metadata');
 const levelPacker = {
     packAll: function (levelGlob) {
         const levels = glob.sync(levelGlob).map(filename => levelPacker.pack(filename));
-        return "const LevelCache = " + JSON.stringify(levels, undefined, 2) + ";\n" +
+        //const string = JSON.stringify(levels, undefined, 2);
+        const string = util.inspect(levels, { depth: null });
+
+        return "const LevelCache = " + string + ";\n" +
             "LevelCache.outro = " + JSON.stringify(LevelMetadata.outro) + ";\n";
     },
 

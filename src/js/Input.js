@@ -1,5 +1,6 @@
 /**
- * Handle game input.
+ * Input handles game input (keyboard presses and mouse movement), allowing the routing
+ * of these events to the appropriate place via event handlers.
  */
 class Input {
     constructor(handlers) {
@@ -36,7 +37,7 @@ class Input {
 
     init() {
         document.addEventListener('keydown', event => {
-            var k = this.map[event.keyCode];
+            let k = this.map[event.keyCode];
 
             // Uncomment to see key codes in console (an easy way to gather potential keys)
             // console.log(event.keyCode);
@@ -60,7 +61,7 @@ class Input {
         });
 
         document.addEventListener('keyup', event => {
-            var k = this.map[event.keyCode];
+            let k = this.map[event.keyCode];
 
             this.queue.unshift(event.key);
             this.queue.splice(10);

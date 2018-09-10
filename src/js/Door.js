@@ -1,5 +1,6 @@
 /**
- * A door is an entity drawn on top of a floor tile, and can slide open and closed.
+ * Door handles the security doors, drawn on top of a floor tile, and can slide open
+ * and closed.
  *
  * A locked door doesn't open when the player is near. Today there are only two
  * types of doors, "entrance" and "exit" - entrance doors lock after the player leaves

@@ -1,5 +1,8 @@
 /**
- * The enemy. There is only one.
+ * Enemy handles the Raven, which are update/render entities with several states.
+ *
+ * In this game enemies cannot be killed, but they can be permanently contained
+ * with security cameras.
  */
 class Enemy {
     constructor(enemyData) {

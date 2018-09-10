@@ -1,4 +1,6 @@
 /**
+ * Camera handles security cameras, which are simple update/render entities.
+ *
  * Security cameras provide LOS, which locks enemies down if they are in the cone,
  * and provides the player with safe passage. Usually turned on by terminals.
  */

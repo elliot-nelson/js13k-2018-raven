@@ -37,13 +37,13 @@ const LevelMetadata = {
         hint: '! Some Raven are more active than others.'
     },
     level06: {
-        name: '06 West Lab Storage',
+        name: '06 Lab Storage',
         hint: '! Although dangerous, looking away may be a useful ruse.',
         chx: 0,
         chy: 32
     },
     level07: {
-        name: '07 West Chemical Lab',
+        name: '07 Chemical Lab',
         hint: '! Most Raven will not attack you until they see you.'
     },
     level08: {

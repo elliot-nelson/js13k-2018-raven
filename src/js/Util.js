@@ -1,3 +1,8 @@
+/**
+ * Util contains a whole bunch of generic stuff used by other modules. Where possible,
+ * I've stuck most of the math and algorithm stuff (visibility, flood fill, etc.) into
+ * this module, along with some often-used tile checks, point checks, etc.
+ */
 const Util = {
     //
     // Various math helpers
@@ -96,7 +101,7 @@ const Util = {
         let inside = false;
 
         for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i++) {
-            if ((polygon[i].y > p.y) != (polygon[j].y > p.y) &&
+            if ((polygon[i].y > p.y) !== (polygon[j].y > p.y) &&
                 p.x < polygon[i].x + (polygon[j].x - polygon[i].x) * (p.y - polygon[i].y) / (polygon[j].y - polygon[i].y))
                 inside = !inside;
         }

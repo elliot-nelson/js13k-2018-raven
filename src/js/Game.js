@@ -199,8 +199,8 @@ class Game {
                 crosshairY: this.player.y - this.canvas.height / 2
             };
 
-            var cd = 4;
-            var bound = {
+            let cd = 4;
+            let bound = {
                 left: this.offset.crosshairX + cd,
                 right: this.offset.crosshairX + this.canvas.width - cd,
                 top: this.offset.crosshairY + cd,
@@ -323,7 +323,7 @@ class Game {
             this._losCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this._losCtx.fillStyle = 'rgba(0,0,0,0.8)';
             this._losCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.vision.forEach((polygon, idx) => {
+            this.vision.forEach(polygon => {
                 this._losCtx.fillStyle = 'rgba(255,255,255,' + polygon.opacity + ')';
                 this._losCtx.beginPath();
                 this._losCtx.moveTo(this.offset.x + polygon[0].x, this.offset.y + polygon[0].y);
@@ -616,7 +616,7 @@ class Game {
 
         for (let i = 0; i < this.level.height; i++) {
             for(let j = 0; j < this.level.width; j++) {
-                var tile = Util.tileAtUV(j, i);
+                let tile = Util.tileAtUV(j, i);
                 if (tile === 1) {
                     Asset.drawSprite('wall', this._tileCtx, j * 32, i * 32);
                     this._renderTileNoise(1, j * 32, i * 32);
@@ -686,8 +686,8 @@ class Game {
     //
     // (Doors are dynamic and are not included in this phase.)
     _polygonizeLevel(level) {
-        var edges = {};
-        var addedge = (x1,y1,x2,y2,type) => {
+        let edges = {};
+        let addedge = (x1,y1,x2,y2,type) => {
             let key1 = `${x1},${y1}${type}`;
             let key2 = `${x2},${y2}${type}`;
             let existingEdge = edges[key1];
@@ -701,9 +701,9 @@ class Game {
 
         // Loop through all floor tiles, checking for adjacent wall tiles, and
         // create or extend an LOS edge whenever we find one.
-        for (var i = 0; i < level.height; i++) {
-            for(var j = 0; j < level.width; j++) {
-                var value = level.data[i * level.width + j];
+        for (let i = 0; i < level.height; i++) {
+            for(let j = 0; j < level.width; j++) {
+                let value = level.data[i * level.width + j];
                 // value=2 is floor "non light obstructing"
                 if (value !== 2) {
                     continue;
@@ -827,8 +827,8 @@ class Game {
 
         let pu = Math.floor(target.x / 32);
         let pv = Math.floor(target.y / 32);
-        var open = [[pu, pv, 2]];
-        var grid = [];
+        let open = [[pu, pv, 2]];
+        let grid = [];
 
         const examine = (u, v, c) => {
             if (Util.wallAtUV(u, v)) {
@@ -836,7 +836,7 @@ class Game {
                 return;
             }
 
-            var priorCost = grid[v * this.level.width + u];
+            let priorCost = grid[v * this.level.width + u];
 
             if (!(u === pu && v === pv) && Util.pointSpottedXY(u * 32 + 16, v * 32 + 16)) {
                 c += 10000;
@@ -852,7 +852,7 @@ class Game {
         }
 
         while(open.length > 0) {
-            var tile = open.shift();
+            let tile = open.shift();
             examine(tile[0], tile[1], tile[2]);
         }
 
