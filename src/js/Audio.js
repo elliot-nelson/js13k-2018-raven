@@ -30,10 +30,10 @@ class Audio {
             ['m1',     1, 'music'],
             ['m2',     1, 'music'],
             ['m3',     1, 'music']
-        ].forEach(data => {
-            this._sounds[data[0]] = this.ctx.createGain();
-            this._sounds[data[0]].gain.value = data[1];
-            this._sounds[data[0]].connect(data[2] ? this._sounds[data[2]] : this.ctx.destination);
+        ].forEach(([name, volume, parent]) => {
+            this._sounds[name] = this.ctx.createGain();
+            this._sounds[name].gain.value = volume;
+            this._sounds[name].connect(parent ? this._sounds[parent] : this.ctx.destination);
         });
 
         // We rotate musical notes between 3 separate gain nodes, so we can control gain on

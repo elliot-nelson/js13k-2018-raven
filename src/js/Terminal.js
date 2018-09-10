@@ -21,7 +21,7 @@ class Terminal {
         this._toggled = undefined;
     }
 
-    update(delta) {
+    update() {
         if (this._toggled) {
             this.enabled = !this.enabled;
             this.cameras.forEach(camera => camera.toggle());

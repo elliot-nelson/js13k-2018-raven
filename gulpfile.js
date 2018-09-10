@@ -4,7 +4,6 @@ const zip = require("gulp-zip");
 const size = require("gulp-size");
 const sourcemaps = require("gulp-sourcemaps");
 const concat = require("gulp-concat");
-const del = require("del");
 const add = require("gulp-add");
 const uglify = require('gulp-uglify');
 const terser = require('gulp-terser');
@@ -12,12 +11,9 @@ const imagemin = require('gulp-imagemin');
 const cleancss = require('gulp-clean-css');
 const htmlmin = require('gulp-htmlmin');
 const shell = require('gulp-shell');
+const eslint = require('gulp-eslint');
 
 const levelPacker = require("./level-packer");
-
-gulp.task('clean', () => {
-    return del('raven');
-});
 
 gulp.task('build:html', () => {
     gulp.src('src/*.html')
@@ -52,6 +48,15 @@ gulp.task('build:js', () => {
         // do nothing; best stack traces for tricky bugs
         // (yes, we have source maps, but my overly-aggressive mangling strategy
         // fubars the sourcemap)
+
+        // I only turn these on for special occasions - for this game, I really didn't bother
+        // with linting, and I ignore all the feedback that wouldn't save me space. (Basically,
+        // the only things I'm interested in are unused var, prefer destructuring, and prefer
+        // simple property notation, anything else is going to be smashed up by terser anyway.)
+        //
+        build = build
+            .pipe(eslint())
+            .pipe(eslint.format());
     } else if (compatMode) {
         // To generate ES5 code, for more compatibility, use babel+uglify
         build = build

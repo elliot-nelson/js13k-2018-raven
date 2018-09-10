@@ -858,4 +858,4 @@ class Game {
 
         this.attackGrid = grid;
     }
-};
+}

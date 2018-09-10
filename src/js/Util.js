@@ -58,30 +58,19 @@ const Util = {
     // Return true if point is inside given triangle. This particular version
     // is an implementation of the barycentric coordinate check.
     pointInTriangle(p, t1, t2, t3) {
-        var d = (t2.y - t3.y) * (t1.x - t3.x) + (t3.x - t2.x) * (t1.y - t3.y);
-        var a = ((t2.y - t3.y) * (p.x - t3.x) + (t3.x - t2.x) * (p.y - t3.y)) / d;
-        var b = ((t3.y - t1.y) * (p.x - t3.x) + (t1.x - t3.x) * (p.y - t3.y)) / d;
-        var c = 1 - a - b;
+        let d = (t2.y - t3.y) * (t1.x - t3.x) + (t3.x - t2.x) * (t1.y - t3.y);
+        let a = ((t2.y - t3.y) * (p.x - t3.x) + (t3.x - t2.x) * (p.y - t3.y)) / d;
+        let b = ((t3.y - t1.y) * (p.x - t3.x) + (t1.x - t3.x) * (p.y - t3.y)) / d;
+        let c = 1 - a - b;
 
         return 0 <= a && a <= 1 && 0 <= b && b <= 1 && 0 <= c && c <= 1;
     },
 
     pointSpottedXY(x, y) {
         for (let i = 0; i < game.vision.length; i++) {
-            if (Util.pointInPolygon({ x: x, y: y }, game.vision[i])) return true;
+            if (Util.pointInPolygon({ x, y }, game.vision[i])) return true;
         }
         return false;
-
-        // ---
-
-        let ptr = Math.floor(y + game.offset.y) * game.canvas.width +
-                  Math.floor(x + game.offset.x);
-
-        // If the green channel in the los canvas is non-zero, this entity is
-        // visible to the player. (Technically any channel will do, but alpha
-        // is not reliable and red is used during death animations, so we'll go
-        // with green).
-        return game.losData.data[ptr * 4 + 1] > 0;
     },
 
     entitySpotted(entity) {
@@ -94,12 +83,6 @@ const Util = {
             Util.pointSpottedXY(entity.x + dx, entity.y + dy) ||
             Util.pointSpottedXY(entity.x - dx, entity.y + dy) ||
             Util.pointSpottedXY(entity.x + dx, entity.y - dy);
-
-        /*for(let i = 0; i < game.friendlySight.length; i++) {
-            if (Util.pointInTriangle(entity, ...game.friendlySight[i])) {
-                return true;
-            }
-        }*/
     },
 
     // Return true if the given point is within the specified polygon. This algorithm
@@ -139,18 +122,18 @@ const Util = {
             // B = x1-x2
             // C = Ax1+By1
     intersection(line1, line2) {
-        var A1 = line1.p2.y - line1.p1.y;
-        var B1 = line1.p1.x - line1.p2.x;
-        var C1 = A1 * line1.p1.x + B1 * line1.p1.y;
+        let A1 = line1.p2.y - line1.p1.y;
+        let B1 = line1.p1.x - line1.p2.x;
+        let C1 = A1 * line1.p1.x + B1 * line1.p1.y;
 
-        var A2 = line2.p2.y - line2.p1.y;
-        var B2 = line2.p1.x - line2.p2.x;
-        var C2 = A2 * line2.p1.x + B2 * line2.p1.y;
+        let A2 = line2.p2.y - line2.p1.y;
+        let B2 = line2.p1.x - line2.p2.x;
+        let C2 = A2 * line2.p1.x + B2 * line2.p1.y;
 
-        var det = A1*B2 - A2*B1;
+        let det = A1*B2 - A2*B1;
 
         if (det !== 0) {
-            var p = {
+            let p = {
                 x: (B2*C1 - B1*C2)/det,
                 y: (A1*C2 - A2*C1)/det
             };
@@ -333,4 +316,4 @@ const Util = {
         game.ctx.arc(x, y, radius + 2, 0, 2 * Math.PI);
         game.ctx.stroke();
     }
-}
+};
