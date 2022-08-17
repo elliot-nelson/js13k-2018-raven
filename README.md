@@ -34,7 +34,7 @@ Overall I'm pretty pleased with how it turned out! The enemy behavior in certain
 
 ### Build process
 
-Early on, to save time, I decided that I would opt out of any of the existing "module" systems (closure, webpack, bundler, etc). The code for my game is organized into separate javascript files (one per class), and they all _assume_ that you will build by concatenating them all first, producing one large javascript file. This, to me, is actually the simplest and most straightforward way to approach building; the downside is that you do some lose some options - for example, I can't write unit tests for any of my math functions, I can't use linting tools unless I turn off a lot of global var checking, etc.
+Early on, to save time, I decided that I would opt out of any of the existing "module" systems (closure, webpack, bundler, etc). The code for my game is organized into separate javascript files (one per class), and they all _assume_ that you will build by concatenating them all first, producing one [large javascript file](https://www.scaler.com/topics/import-js-file-in-js/). This, to me, is actually the simplest and most straightforward way to approach building; the downside is that you do some lose some options - for example, I can't write unit tests for any of my math functions, I can't use linting tools unless I turn off a lot of global var checking, etc.
 
 Before next year, I'll do some further research on this topic, and see if I can find a module system I like that would give me the flexibility back (valid javascript files when required by node.js) without adding extra cruft to the output file.
 
